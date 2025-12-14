@@ -7,7 +7,7 @@ steps:
       - '-t'
       - 'us-central1-docker.pkg.dev/mybigmartprediction/streamlit-app-repo/streamlit-app:latest'
       - '--file' # <--- Flag to specify the Dockerfile location
-      - 'my_datascience_projects/ML/04_StreamlitGCPDeployment/dockerfile' # <--- Full path to the Dockerfile
+      - 'ML/04_StreamlitGCPDeployment/Dockerfile' # <--- Full path to the Dockerfile
       - '.' # <--- Build Context: Use the repository root (/workspace)
   - name: 'gcr.io/cloud-builders/docker'
     args:
