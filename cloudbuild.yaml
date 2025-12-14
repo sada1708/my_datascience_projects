@@ -5,15 +5,15 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'us-central1-docker.pkg.dev/mybigmartprediction/streamlit-app-repo/streamlit-app:latest'
+      - 'us-central1-docker.pkg.dev/streamlitapp-bigmart/my_datascience_projects/streamlit-app:latest'
       #- '--file' # <--- Flag to specify the Dockerfile location
       #- 'ML/04_StreamlitGCPDeployment/Dockerfile' # <--- Full path to the Dockerfile
       - '.' # <--- Build Context: Use the repository root (/workspace)
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'us-central1-docker.pkg.dev/mybigmartprediction/streamlit-app-repo/streamlit-app:latest'
+      - 'us-central1-docker.pkg.dev/streamlitapp-bigmart/my_datascience_projects/streamlit-app:latest'
 images:
-  - 'us-central1-docker.pkg.dev/mybigmartprediction/streamlit-app-repo/streamlit-app:latest'
+  - 'us-central1-docker.pkg.dev/streamlitapp-bigmart/my_datascience_projects/streamlit-app:latest'
 options:
   logging: CLOUD_LOGGING_ONLY
