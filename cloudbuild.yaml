@@ -1,7 +1,7 @@
 steps:
   # 1. Build the Streamlit application Docker image
   - name: 'gcr.io/cloud-builders/docker'
-    dir: 'Datascience/ML/04_StreamlitGCPDeployment' # <--- Sets the working directory (WD)
+    #dir: 'Datascience/ML/04_StreamlitGCPDeployment' # <--- Sets the working directory (WD)
     args:
       - 'build'
       - '-t'
@@ -18,3 +18,6 @@ images:
 options:
   logging: CLOUD_LOGGING_ONLY
 
+
+
+Dockerfile path: lstat /workspace/Datascience/ML/04_StreamlitGCPDeployment/Datascience: no such file or directory
