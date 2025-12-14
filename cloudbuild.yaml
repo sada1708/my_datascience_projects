@@ -1,10 +1,12 @@
 steps:
+  # 1. Build the Streamlit application Docker image
   - name: 'gcr.io/cloud-builders/docker'
+    dir: 'Datascience/ML/04_StreamlitGCPDeployment' # <--- Sets the working directory (WD)
     args:
       - 'build'
       - '-t'
       - 'us-central1-docker.pkg.dev/mybigmartprediction/streamlit-app-repo/streamlit-app:latest'
-      - './my_datascience_projects/ML/04_StreamlitGCPDeployment' # This tells Cloud Build to use the 'src04_StreamlitGCPDeployment' folder as the build context
+      - '.' # <--- Context: Use the current working directory (which is now the application folder)
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
