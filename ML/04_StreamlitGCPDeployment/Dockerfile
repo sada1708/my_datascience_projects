@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copy the requirements.txt, model and application code
 COPY requirements.txt .
-COPY bigmart_model.pkl . # Make sure this is the correct filename for your model
+COPY bigmart_model.pkl . 
 COPY app.py .
 
 # Install dependencies
