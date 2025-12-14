@@ -17,7 +17,3 @@ images:
   - 'us-central1-docker.pkg.dev/mybigmartprediction/streamlit-app-repo/streamlit-app:latest'
 options:
   logging: CLOUD_LOGGING_ONLY
-
-
-
-Dockerfile path: lstat /workspace/Datascience/ML/04_StreamlitGCPDeployment/Datascience: no such file or directory
