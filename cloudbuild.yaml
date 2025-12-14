@@ -4,7 +4,7 @@ steps:
       - 'build'
       - '-t'
       - 'us-central1-docker.pkg.dev/mybigmartprediction/streamlit-app-repo/streamlit-app:latest'
-      - '04_StreamlitGCPDeployment' # This tells Cloud Build to use the 'src04_StreamlitGCPDeployment' folder as the build context
+      - './my_datascience_projects/ML/04_StreamlitGCPDeployment' # This tells Cloud Build to use the 'src04_StreamlitGCPDeployment' folder as the build context
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
