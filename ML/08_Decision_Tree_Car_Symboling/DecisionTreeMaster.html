@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inceptez: Decision Trees Masterclass</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&family=JetBrains+Mono:wght@500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* 1. RESET & THEME VARIABLES */
+        :root {
+            --bg-color: #0f172a;
+            /* Dark Slate */
+            --slide-bg: #ffffff;
+            /* White */
+            --primary: #2563eb;
+            /* Royal Blue */
+            --secondary: #3b82f6;
+            /* Sky Blue */
+            --accent: #f59e0b;
+            /* Amber */
+            --success: #10b981;
+            /* Emerald */
+            --danger: #ef4444;
+            /* Red */
+            --text-main: #1e293b;
+            /* Slate 800 */
+            --text-light: #64748b;
+            /* Slate 500 */
+            --font-main: 'Poppins', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            outline: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: var(--font-main);
+            overflow: hidden;
+            color: var(--text-main);
+        }
+
+        /* 2. MAIN DECK CONTAINER */
+        #deck {
+            width: 1280px;
+            height: 720px;
+            position: relative;
+            background: var(--slide-bg);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 6px;
+            background: var(--success);
+            width: 0%;
+            z-index: 100;
+            transition: width 0.3s ease;
+        }
+
+        /* 3. SLIDES & ANIMATIONS */
+        .slide {
+            position: absolute;
+            inset: 0;
+            padding: 40px 60px;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.95);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: all;
+            transform: scale(1);
+        }
+
+        /* 4. TYPOGRAPHY & LAYOUT */
+        h1 {
+            font-size: 64px;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 42px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 30px;
+            border-left: 8px solid var(--accent);
+            padding-left: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--secondary);
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 20px;
+            line-height: 1.6;
+            color: var(--text-main);
+            margin-bottom: 15px;
+        }
+
+        .row {
+            display: flex;
+            gap: 40px;
+            height: 100%;
+            align-items: center;
+        }
+
+        .col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .center-box {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        /* 5. CARDS & VISUALS */
+        .concept-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .concept-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-color: var(--secondary);
+        }
+
+        /* Node Styles */
+        .node {
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 18px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.1);
+            border: 2px solid transparent;
+            position: relative;
+            z-index: 2;
+            background: white;
+            white-space: nowrap;
+        }
+
+        .node.root {
+            background: #eff6ff;
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .node.leaf {
+            background: #f0fdf4;
+            border-color: var(--success);
+            color: #059669;
+        }
+
+        .node.impure {
+            background: #fef2f2;
+            border-color: var(--danger);
+            color: #dc2626;
+        }
+
+        .node.decision {
+            background: #fffbeb;
+            border-color: var(--accent);
+            color: #d97706;
+        }
+
+        /* Connector Lines */
+        .connector-v {
+            width: 2px;
+            background: #cbd5e1;
+            position: absolute;
+            z-index: 1;
+        }
+
+        .connector-h {
+            height: 2px;
+            background: #cbd5e1;
+            position: absolute;
+            z-index: 1;
+        }
+
+        /* 6. TABLES (Modern & Clean) */
+        .table-wrapper {
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            width: 100%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 18px;
+            background: white;
+        }
+
+        th {
+            background: var(--primary);
+            color: white;
+            padding: 18px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid #e2e8f0;
+            color: var(--text-main);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        tr:hover {
+            background: #eff6ff;
+        }
+
+        /* 7. INTERACTIVE COMPONENTS */
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-main);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 0 #1e40af;
+        }
+
+        .btn-primary:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+            box-shadow: 0 4px 0 #b91c1c;
+        }
+
+        .btn-danger:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        .btn-reset {
+            background: #e2e8f0;
+            color: var(--text-main);
+        }
+
+        /* Gini Jar */
+        .jar-container {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .bucket {
+            width: 200px;
+            height: 240px;
+            border: 6px solid #94a3b8;
+            border-top: none;
+            border-radius: 0 0 24px 24px;
+            background: rgba(241, 245, 249, 0.5);
+            position: relative;
+            display: flex;
+            flex-wrap: wrap-reverse;
+            align-content: flex-start;
+            padding: 10px;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .ball {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            box-shadow: inset -5px -5px 10px rgba(0, 0, 0, 0.1);
+            animation: dropIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .ball.blue {
+            background: var(--secondary);
+        }
+
+        .ball.red {
+            background: var(--danger);
+        }
+
+        @keyframes dropIn {
+            from {
+                transform: translateY(-100px) scale(0);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Math Display */
+        .math-box {
+            font-family: var(--font-mono);
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 18px;
+            margin-top: 15px;
+            border-left: 4px solid var(--accent);
+        }
+
+        .math-highlight {
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        /* Slider */
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+            accent-color: var(--primary);
+            margin: 20px 0;
+        }
+
+        /* Footer Nav */
+        .footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            z-index: 50;
+        }
+
+        .nav-arrows {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: var(--text-main);
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Drag and Drop Styles */
+        .draggable-item {
+            background: white;
+            border: 2px solid var(--primary);
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: grab;
+            font-weight: bold;
+            color: var(--primary);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .draggable-item:active {
+            cursor: grabbing;
+            transform: scale(0.95);
+        }
+
+        .drop-zone {
+            width: 250px;
+            height: 80px;
+            border: 3px dashed #cbd5e1;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            transition: all 0.2s;
+            color: #94a3b8;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .drop-zone.hover {
+            border-color: var(--success);
+            background: #f0fdf4;
+            color: var(--success);
+        }
+
+        .drop-zone.filled {
+            border-style: solid;
+            border-color: var(--primary);
+            background: #eff6ff;
+            color: var(--primary);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="deck">
+        <div class="progress-bar" id="progressBar"></div>
+
+        <!-- 1. TITLE SLIDE -->
+        <div class="slide active">
+            <div class="center-box">
+                <div style="font-weight: 800; letter-spacing: 2px; color: var(--text-light); margin-bottom: 10px;">
+                    INCEPTEZ ACADEMY</div>
+                <h1>Decision Trees &<br>Classification</h1>
+                <p style="font-size: 24px; color: var(--text-light);">A Visual Masterclass: From Scratch to Prediction
+                </p>
+                <div style="margin-top: 50px; display: flex; gap: 30px; align-items: center;">
+                    <div class="node root"><i class="fa-solid fa-database"></i> Data</div>
+                    <i class="fa-solid fa-arrow-right-long" style="color: var(--text-light); font-size: 24px;"></i>
+                    <div class="node decision"><i class="fa-solid fa-code-branch"></i> Rules</div>
+                    <i class="fa-solid fa-arrow-right-long" style="color: var(--text-light); font-size: 24px;"></i>
+                    <div class="node leaf"><i class="fa-solid fa-bullseye"></i> Prediction</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. CLASSIFICATION VS REGRESSION -->
+        <div class="slide">
+            <h2>1. Classification vs Regression</h2>
+            <div class="row">
+                <div class="col">
+                    <div class="concept-card" style="border-left-color: var(--primary);">
+                        <div style="color: var(--primary); font-size: 40px; margin-bottom: 15px;"><i
+                                class="fa-solid fa-shapes"></i></div>
+                        <h3>Classification Tree</h3>
+                        <p><strong>Goal:</strong> Predict a Category or Class.</p>
+                        <ul style="list-style: none; padding: 0;">
+                            <li style="margin-bottom: 10px;"><i class="fa-solid fa-check"
+                                    style="color: var(--success);"></i> Spam vs Not Spam</li>
+                            <li style="margin-bottom: 10px;"><i class="fa-solid fa-check"
+                                    style="color: var(--success);"></i> Yes vs No</li>
+                        </ul>
+                        <div
+                            style="margin-top: 15px; font-size: 14px; font-weight: bold; color: var(--primary); text-transform: uppercase;">
+                            Topic of the Day</div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="concept-card" style="border-left-color: var(--accent); opacity: 0.7;">
+                        <div style="color: var(--accent); font-size: 40px; margin-bottom: 15px;"><i
+                                class="fa-solid fa-chart-line"></i></div>
+                        <h3>Regression Tree</h3>
+                        <p><strong>Goal:</strong> Predict a Continuous Number.</p>
+                        <ul style="list-style: none; padding: 0;">
+                            <li style="margin-bottom: 10px;"><i class="fa-solid fa-hashtag"
+                                    style="color: var(--text-light);"></i> House Price</li>
+                            <li style="margin-bottom: 10px;"><i class="fa-solid fa-hashtag"
+                                    style="color: var(--text-light);"></i> Temperature</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. DATA TYPES -->
+        <div class="slide">
+            <h2>2. Understanding Data Types</h2>
+            <div class="row">
+                <div class="col">
+                    <p>Trees handle data differently based on its type. We need to handle both.</p>
+
+                    <div class="concept-card" style="margin-bottom: 20px;">
+                        <h3><i class="fa-solid fa-layer-group"></i> Categorical Data</h3>
+                        <p>Discrete buckets. Easy to split.</p>
+                        <p
+                            style="font-family: var(--font-mono); font-size: 16px; background: #e2e8f0; padding: 8px; border-radius: 6px;">
+                            Color == 'Red'?</p>
+                    </div>
+
+                    <div class="concept-card">
+                        <h3><i class="fa-solid fa-ruler-horizontal"></i> Numerical Data</h3>
+                        <p>Continuous range. Needs a <strong>Threshold</strong>.</p>
+                        <p
+                            style="font-family: var(--font-mono); font-size: 16px; background: #e2e8f0; padding: 8px; border-radius: 6px;">
+                            Age < 30.5?</p>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="center-box">
+                        <i class="fa-solid fa-filter"
+                            style="font-size: 100px; color: var(--text-light); opacity: 0.2;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. LOGIC FLOW -->
+        <div class="slide">
+            <h2>3. The Golden Rule of Flow</h2>
+            <div class="center-box">
+                <div class="node root" style="font-size: 32px; padding: 20px 40px;">Condition Met?</div>
+
+                <div style="display: flex; gap: 150px; margin-top: 50px;">
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <div style="font-size: 24px; font-weight: 800; color: var(--success); margin-bottom: 10px;">TRUE
+                        </div>
+                        <i class="fa-solid fa-arrow-down-long" style="font-size: 60px; color: var(--success);"></i>
+                        <div class="node leaf" style="margin-top: 20px;">Go Left</div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <div style="font-size: 24px; font-weight: 800; color: var(--danger); margin-bottom: 10px;">FALSE
+                        </div>
+                        <i class="fa-solid fa-arrow-down-long" style="font-size: 60px; color: var(--danger);"></i>
+                        <div class="node impure" style="margin-top: 20px;">Go Right</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. ANATOMY -->
+        <div class="slide">
+            <h2>4. Anatomy of a Decision Tree</h2>
+            <div class="center-box" style="position: relative;">
+                <!-- Tree Visualization -->
+                <div class="node root" style="margin-bottom: 60px;">Root Node</div>
+
+                <!-- Lines -->
+                <div class="connector-v" style="height: 30px; top: 60px;"></div>
+                <div class="connector-h" style="width: 300px; top: 90px;"></div>
+                <div class="connector-v" style="height: 30px; top: 90px; left: calc(50% - 150px);"></div>
+                <div class="connector-v" style="height: 30px; top: 90px; right: calc(50% - 150px);"></div>
+
+                <div style="display: flex; gap: 180px;">
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <div class="node decision">Intermediate</div>
+                        <p style="font-size: 14px; margin-top: 10px; color: var(--text-light);">Splits further</p>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <div class="node leaf">Leaf Node</div>
+                        <p style="font-size: 14px; margin-top: 10px; color: var(--text-light);">Final Prediction</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. EXAMPLE 1: DATA -->
+        <div class="slide">
+            <h2>5. Example 1: Basic Dataset</h2>
+            <div class="row">
+                <div class="col" style="flex: 0.8;">
+                    <p>We want to predict: <strong style="color: var(--primary);">Buy (Yes/No)</strong></p>
+                    <div class="concept-card">
+                        <h3>Features</h3>
+                        <ul style="margin-left: 20px;">
+                            <li><strong>Age</strong> (Numeric)</li>
+                            <li><strong>Student</strong> (Categorical)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Age</th>
+                                    <th>Student</th>
+                                    <th>Buy? (Target)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>22</td>
+                                    <td>No</td>
+                                    <td>No</td>
+                                </tr>
+                                <tr>
+                                    <td>28</td>
+                                    <td>Yes</td>
+                                    <td>Yes</td>
+                                </tr>
+                                <tr>
+                                    <td>45</td>
+                                    <td>No</td>
+                                    <td>No</td>
+                                </tr>
+                                <tr>
+                                    <td>35</td>
+                                    <td>Yes</td>
+                                    <td>Yes</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. EXAMPLE 1: COLUMN EXPERIMENT -->
+        <div class="slide">
+            <h2>6. Testing Splits (Interactive)</h2>
+            <p>Click to see how each column splits the data.</p>
+            <div class="row" style="align-items: flex-start;">
+                <div class="col" style="flex: 0.4;">
+                    <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 15px;">
+                        <button class="btn btn-primary" onclick="visualizeSplit('student')">Test 'Student'
+                            Split</button>
+                        <button class="btn btn-danger" onclick="visualizeSplit('age')">Test 'Age > 30' Split</button>
+                    </div>
+                </div>
+
+                <div class="col"
+                    style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 16px; padding: 20px; position: relative;">
+                    <div id="split-viz-container"
+                        style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                        <div style="color: var(--text-light);">Select a column to test...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. EXAMPLE 1: NUMERIC SLIDER -->
+        <div class="slide">
+            <h2>7. Finding the Age Threshold</h2>
+            <div class="center-box">
+                <p>We can't just guess "30". We test the <strong>Midpoints</strong>.</p>
+                <div style="width: 80%; position: relative; margin-bottom: 20px;">
+                    <div
+                        style="display: flex; justify-content: space-between; color: var(--text-light); font-weight: bold; margin-bottom: 10px;">
+                        <span>22</span><span>25</span><span>28</span><span>31.5</span><span>35</span><span>40</span><span>45</span>
+                    </div>
+                    <!-- Visual Data Points -->
+                    <div style="position: absolute; top: 35px; left: 0; width: 100%; height: 10px; z-index: 0;">
+                        <div class="ball red" style="width: 15px; height: 15px; position: absolute; left: 0%;"
+                            title="22 (No)"></div>
+                        <div class="ball blue" style="width: 15px; height: 15px; position: absolute; left: 26%;"
+                            title="28 (Yes)"></div>
+                        <div class="ball blue" style="width: 15px; height: 15px; position: absolute; left: 56%;"
+                            title="35 (Yes)"></div>
+                        <div class="ball red" style="width: 15px; height: 15px; position: absolute; left: 100%;"
+                            title="45 (No)"></div>
+                    </div>
+                    <input type="range" min="0" max="2" value="1" id="threshold-slider-1" oninput="updateThreshold1()">
+                </div>
+
+                <div id="threshold-val-1"
+                    style="font-size: 24px; font-weight: 800; color: var(--primary); margin: 20px 0;">Split: Age <
+                        31.5</div>
+
+                        <div style="display: flex; gap: 40px; width: 100%;">
+                            <div class="concept-card" style="flex: 1;">
+                                <h3 style="color: var(--primary);">Left Branch</h3>
+                                <p id="left-count-1">1 Yes, 1 No</p>
+                                <div class="math-box" id="left-gini-1" style="padding: 10px; font-size: 16px;">Gini:
+                                    0.50</div>
+                            </div>
+                            <div class="concept-card" style="flex: 1;">
+                                <h3 style="color: var(--primary);">Right Branch</h3>
+                                <p id="right-count-1">1 Yes, 1 No</p>
+                                <div class="math-box" id="right-gini-1" style="padding: 10px; font-size: 16px;">Gini:
+                                    0.50</div>
+                            </div>
+                        </div>
+                </div>
+            </div>
+
+            <!-- 9. INTUITION -->
+            <div class="slide">
+                <h2>8. Intuition: Seeking Purity</h2>
+                <div class="row">
+                    <div class="col">
+                        <p>The human brain naturally categorizes things.</p>
+                        <p>We prefer buckets that are <strong>Pure</strong> (Certainty) over buckets that are
+                            <strong>Impure</strong> (Confusion).</p>
+                    </div>
+                    <div class="col">
+                        <div style="display: flex; flex-direction: column; gap: 20px;">
+                            <div class="concept-card"
+                                style="border-left: 5px solid var(--success); background: #f0fdf4;">
+                                <h3 style="color: var(--success);">Pure Bucket</h3>
+                                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                                    <div class="ball blue"></div>
+                                    <div class="ball blue"></div>
+                                    <div class="ball blue"></div>
+                                </div>
+                                <p style="font-size: 16px; margin-top: 10px; color: #065f46;">We know exactly what to
+                                    predict (Blue!).</p>
+                            </div>
+
+                            <div class="concept-card"
+                                style="border-left: 5px solid var(--danger); background: #fef2f2;">
+                                <h3 style="color: var(--danger);">Impure Bucket</h3>
+                                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                                    <div class="ball blue"></div>
+                                    <div class="ball red"></div>
+                                    <div class="ball blue"></div>
+                                    <div class="ball red"></div>
+                                </div>
+                                <p style="font-size: 16px; margin-top: 10px; color: #991b1b;">Total confusion. We need
+                                    more questions.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 10. METRICS INTRO -->
+            <div class="slide">
+                <h2>9. Measuring Impurity</h2>
+                <p>We need a math score to compare splits. Lower is better (more pure).</p>
+                <div class="row">
+                    <div class="col">
+                        <div class="concept-card" style="border-top: 4px solid var(--primary);">
+                            <h3>Gini Impurity</h3>
+                            <div class="math-box" style="text-align: center;">1 - &Sigma; (p<sub>i</sub>)<sup>2</sup>
+                            </div>
+                            <p>Range: 0 (Pure) to 0.5 (Mixed).</p>
+                            <p style="font-size: 14px; color: var(--text-light);">Computationally faster. Default in
+                                CART.</p>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="concept-card" style="border-top: 4px solid var(--accent);">
+                            <h3>Entropy</h3>
+                            <div class="math-box" style="text-align: center;">- &Sigma; p<sub>i</sub>
+                                log<sub>2</sub>(p<sub>i</sub>)</div>
+                            <p>Range: 0 (Pure) to 1.0 (Mixed).</p>
+                            <p style="font-size: 14px; color: var(--text-light);">Used in ID3/C4.5. Uses logarithms.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 11. INTERACTIVE GINI LAB -->
+            <div class="slide">
+                <h2>10. The Gini Lab (Interactive)</h2>
+                <div class="row">
+                    <div class="col" style="flex: 0.6;">
+                        <p>Add balls to the bucket to see how Gini changes.</p>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <button class="btn btn-primary" onclick="addBall('blue')"><i class="fa-solid fa-plus"></i>
+                                Add Blue (Yes)</button>
+                            <button class="btn btn-danger" onclick="addBall('red')"><i class="fa-solid fa-plus"></i> Add
+                                Red (No)</button>
+                            <button class="btn btn-reset" onclick="resetJar()"><i class="fa-solid fa-rotate-left"></i>
+                                Reset</button>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="jar-container">
+                            <div class="bucket" id="gini-jar"></div>
+                            <div style="flex: 1;">
+                                <div class="math-box">
+                                    <div style="margin-bottom: 5px; color: #94a3b8; font-size: 14px;">Formula</div>
+                                    <div id="gini-calc-text">1 - (0)² - (0)²</div>
+                                    <div style="margin-top: 15px; color: #94a3b8; font-size: 14px;">Score</div>
+                                    <div id="gini-score"
+                                        style="font-size: 48px; color: var(--accent); font-weight: bold;">0.00</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 12. GINI STEP BY STEP -->
+            <div class="slide">
+                <h2>11. Gini Step-by-Step</h2>
+                <div class="center-box">
+                    <div class="concept-card" style="width: 80%; text-align: left;">
+                        <h3>Example: 3 Blue, 3 Red (Total 6)</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+                            <div>
+                                <p><strong>Step 1: Probabilities</strong></p>
+                                <p>P(Blue) = 3/6 = 0.5</p>
+                                <p>P(Red) = 3/6 = 0.5</p>
+                            </div>
+                            <div>
+                                <p><strong>Step 2: Square Them</strong></p>
+                                <p>0.5² = 0.25</p>
+                                <p>0.5² = 0.25</p>
+                            </div>
+                        </div>
+                        <hr style="margin: 20px 0; border-color: #e2e8f0;">
+                        <p><strong>Step 3: Subtract from 1</strong></p>
+                        <div class="math-box" style="text-align: center;">1 - 0.25 - 0.25 = <span
+                                class="math-highlight">0.5</span></div>
+                        <p style="text-align: center; font-size: 14px; margin-top: 10px;">(0.5 is maximum impurity for 2
+                            classes)</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 13. EXAMPLE 2: DATA -->
+            <div class="slide">
+                <h2>12. Example 2: Complex Data</h2>
+                <div class="row">
+                    <div class="col">
+                        <p>Sometimes one column isn't enough. We need a bigger tree!</p>
+                        <div class="concept-card">
+                            <p><strong>Goal:</strong> Build a tree to perfectly separate this data.</p>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="table-wrapper">
+                            <table style="font-size: 16px;">
+                                <thead>
+                                    <tr>
+                                        <th>Age</th>
+                                        <th>Student</th>
+                                        <th>Income</th>
+                                        <th>Buy?</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>25</td>
+                                        <td>No</td>
+                                        <td>High</td>
+                                        <td>No</td>
+                                    </tr>
+                                    <tr>
+                                        <td>28</td>
+                                        <td>Yes</td>
+                                        <td>High</td>
+                                        <td>Yes</td>
+                                    </tr>
+                                    <tr>
+                                        <td>35</td>
+                                        <td>No</td>
+                                        <td>Low</td>
+                                        <td>No</td>
+                                    </tr>
+                                    <tr>
+                                        <td>40</td>
+                                        <td>Yes</td>
+                                        <td>Low</td>
+                                        <td>Yes</td>
+                                    </tr>
+                                    <tr>
+                                        <td>50</td>
+                                        <td>No</td>
+                                        <td>High</td>
+                                        <td>No</td>
+                                    </tr>
+                                    <tr>
+                                        <td>20</td>
+                                        <td>Yes</td>
+                                        <td>Low</td>
+                                        <td>No</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 14. TREE BUILDER (SANDBOX) -->
+            <div class="slide">
+                <h2>13. Build Your Tree (Sandbox)</h2>
+                <p>Drag features to find the perfect split!</p>
+
+                <div class="row" style="align-items: flex-start;">
+                    <!-- Source Features -->
+                    <div class="col" style="flex: 0.3; gap: 15px; display: flex; flex-direction: column;">
+                        <div class="draggable-item" draggable="true" ondragstart="drag(event)" id="feat-age">Age</div>
+                        <div class="draggable-item" draggable="true" ondragstart="drag(event)" id="feat-student">Student
+                        </div>
+                        <div class="draggable-item" draggable="true" ondragstart="drag(event)" id="feat-income">Income
+                        </div>
+                    </div>
+
+                    <!-- Tree Area -->
+                    <div class="col"
+                        style="flex: 0.7; background: #f8fafc; border-radius: 20px; padding: 20px; min-height: 450px; display: flex; flex-direction: column; align-items: center; overflow-y: auto;">
+
+                        <!-- Root Drop -->
+                        <div id="drop-root" class="drop-zone" ondrop="dropRoot(event)" ondragover="allowDrop(event)">
+                            Drop Root Here</div>
+                        <div id="root-viz"></div>
+
+                        <!-- Level 2 Drop -->
+                        <div id="level2-container"
+                            style="display:none; width: 100%; flex-direction: column; align-items: center; margin-top: 20px; border-top: 2px dashed #cbd5e1; padding-top: 20px;">
+                            <p style="font-size: 14px; color: var(--danger);">"Yes" Branch is Impure! Split again?</p>
+                            <div id="drop-l2" class="drop-zone" style="border-color: var(--accent);"
+                                ondrop="dropL2(event)" ondragover="allowDrop(event)">Drop Level 2 Here</div>
+                            <div id="l2-viz"></div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- 15. FINAL DECISION -->
+            <div class="slide">
+                <h2>14. Final Classification</h2>
+                <div class="row">
+                    <div class="col">
+                        <p>Once the tree is built, every "Leaf" contains a decision.</p>
+                        <div class="concept-card">
+                            <h3>Decision Logic</h3>
+                            <ul style="margin-left: 20px;">
+                                <li><strong>Pure Leaf:</strong> Return the single class.</li>
+                                <li><strong>Impure Leaf:</strong> Return the Majority Vote (Mode).</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="center-box">
+                            <div class="node leaf" style="font-size: 30px;">Prediction: YES</div>
+                            <p style="margin-top: 20px;">Confidence: 97%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 16. PREDICTION ANIMATION -->
+            <div class="slide">
+                <h2>15. New Data Prediction</h2>
+                <div class="center-box">
+                    <div style="margin-bottom: 30px; background: #f1f5f9; padding: 15px; border-radius: 8px;">
+                        <strong>Input:</strong> { Age: 20, Student: Yes }
+                    </div>
+
+                    <button class="btn btn-primary" onclick="runPrediction()">
+                        <i class="fa-solid fa-play"></i> Run Prediction
+                    </button>
+
+                    <div style="margin-top: 40px; position: relative; height: 300px; width: 100%;">
+                        <!-- Moving Dot -->
+                        <div id="pred-dot"
+                            style="width: 20px; height: 20px; background: var(--accent); border-radius: 50%; position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); display: none; z-index: 10;">
+                        </div>
+
+                        <div id="p-node-1" class="node root"
+                            style="position: absolute; top: 0; left: 50%; transform: translateX(-50%);">Student?</div>
+
+                        <div id="p-node-2" class="node leaf" style="position: absolute; top: 100px; left: 20%;">No (0
+                            No)</div>
+                        <div id="p-node-3" class="node decision"
+                            style="position: absolute; top: 100px; left: 80%; transform: translateX(-100%);">Age <
+                                25?</div>
+
+                                <div id="p-node-4" class="node leaf" style="position: absolute; top: 200px; left: 60%;">
+                                    Yes (No)</div>
+                                <div id="p-node-5" class="node leaf"
+                                    style="position: absolute; top: 200px; left: 90%; transform: translateX(-100%);">No
+                                    (Yes)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 17. OVERFITTING -->
+                <div class="slide">
+                    <h2>16. Overfitting & Pruning</h2>
+                    <div class="row">
+                        <div class="col">
+                            <h3 style="color: var(--danger);">Problem: Overfitting</h3>
+                            <p>A tree that grows too deep memorizes noise. It works on training data but fails in the
+                                real world.</p>
+                        </div>
+                        <div class="col">
+                            <h3 style="color: var(--success);">Solution: Pruning</h3>
+                            <div class="concept-card">
+                                <p><strong>Pre-Pruning:</strong> Stop early (Max Depth = 3).</p>
+                                <p><strong>Post-Pruning:</strong> Build full tree, then cut weak branches.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 18. ADVANCED TOPICS -->
+                <div class="slide">
+                    <h2>17. Advanced Features</h2>
+                    <div class="row">
+                        <div class="col">
+                            <div class="concept-card">
+                                <h3><i class="fa-solid fa-star"></i> Feature Selection</h3>
+                                <p>Trees automatically rank importance.</p>
+                                <p>Top Node = Most Important.</p>
+                                <p>Unused Columns = Irrelevant.</p>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="concept-card">
+                                <h3><i class="fa-solid fa-circle-question"></i> Missing Data</h3>
+                                <p>Trees can handle missing values.</p>
+                                <p>Method: Surrogate Splits (backup rules) or follow majority.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 19. ENTROPY -->
+                <div class="slide">
+                    <h2>18. Entropy & Info Gain</h2>
+                    <p>An alternative to Gini. Conceptually identical, mathematically different.</p>
+                    <div class="row">
+                        <div class="col">
+                            <div class="concept-card">
+                                <h3>Entropy</h3>
+                                <p>Measures Disorder.</p>
+                                <div class="math-box">Low Entropy = Pure</div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="concept-card">
+                                <h3>Information Gain</h3>
+                                <p>Reduction in Entropy.</p>
+                                <div class="math-box">Gain = Parent - Children</div>
+                                <p style="font-size: 14px; margin-top: 10px;">We want to MAXIMIZE Gain.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FOOTER NAVIGATION -->
+                <div class="footer">
+                    <div style="font-weight: 600; color: var(--text-light);">Inceptez Academy</div>
+                    <div class="nav-arrows">
+                        <div class="nav-btn" onclick="prevSlide()"><i class="fa-solid fa-chevron-left"></i></div>
+                        <div style="display: grid; place-items: center; width: 60px; font-family: var(--font-mono);"
+                            id="slide-counter">1/18</div>
+                        <div class="nav-btn" onclick="nextSlide()"><i class="fa-solid fa-chevron-right"></i></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <script>
+                let currentSlide = 0;
+                const slides = document.querySelectorAll('.slide');
+                const totalSlides = slides.length;
+                const progressBar = document.getElementById('progressBar');
+                const slideCounter = document.getElementById('slide-counter');
+
+                function updateUI() {
+                    slides.forEach((s, i) => {
+                        s.classList.remove('active');
+                        if (i === currentSlide) s.classList.add('active');
+                    });
+
+                    // Update Progress
+                    const percent = ((currentSlide + 1) / totalSlides) * 100;
+                    progressBar.style.width = percent + '%';
+                    slideCounter.innerText = `${currentSlide + 1}/${totalSlides}`;
+                }
+
+                function nextSlide() {
+                    if (currentSlide < totalSlides - 1) {
+                        currentSlide++;
+                        updateUI();
+                    }
+                }
+
+                function prevSlide() {
+                    if (currentSlide > 0) {
+                        currentSlide--;
+                        updateUI();
+                    }
+                }
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+                    if (e.key === 'ArrowLeft') prevSlide();
+                });
+
+                updateUI();
+
+                // --- INTERACTIVE LOGIC ---
+
+                // Visualization Split Logic (Slide 7)
+                function visualizeSplit(type) {
+                    const container = document.getElementById('split-viz-container');
+                    if (type === 'student') {
+                        container.innerHTML = `
+                <div class="node root" style="margin-bottom:20px;">Is Student?</div>
+                <div style="display:flex; gap:40px;">
+                    <div class="concept-card" style="text-align:center;">
+                        <div style="color:var(--success); font-weight:bold;">Yes (Left)</div>
+                        <div>28 (Y), 35 (Y)</div>
+                        <div class="node leaf" style="margin-top:10px;">PURE</div>
+                    </div>
+                    <div class="concept-card" style="text-align:center;">
+                        <div style="color:var(--danger); font-weight:bold;">No (Right)</div>
+                        <div>22 (N), 45 (N)</div>
+                        <div class="node leaf" style="margin-top:10px;">PURE</div>
+                    </div>
+                </div>
+                <div style="margin-top:20px; color:var(--success); font-weight:bold;">PERFECT SPLIT!</div>
+            `;
+                    } else {
+                        container.innerHTML = `
+                <div class="node root" style="margin-bottom:20px;">Age > 30?</div>
+                <div style="display:flex; gap:40px;">
+                    <div class="concept-card" style="text-align:center;">
+                        <div style="color:var(--danger); font-weight:bold;">No (Left)</div>
+                        <div>22 (N), 28 (Y)</div>
+                        <div class="node impure" style="margin-top:10px;">IMPURE (Mix)</div>
+                    </div>
+                    <div class="concept-card" style="text-align:center;">
+                        <div style="color:var(--danger); font-weight:bold;">Yes (Right)</div>
+                        <div>35 (Y), 45 (N)</div>
+                        <div class="node impure" style="margin-top:10px;">IMPURE (Mix)</div>
+                    </div>
+                </div>
+                <div style="margin-top:20px; color:var(--danger); font-weight:bold;">BAD SPLIT!</div>
+            `;
+                    }
+                }
+
+                // Threshold Slider (Slide 8 - Example 1)
+                function updateThreshold1() {
+                    const index = parseInt(document.getElementById('threshold-slider-1').value);
+                    // Data: 22(N), 28(Y), 35(Y), 45(N). Sorted: 22, 28, 35, 45
+                    // Midpoints: 25, 31.5, 40
+                    const midpoints = [25, 31.5, 40];
+                    const val = midpoints[index];
+
+                    let lY = 0, lN = 0, rY = 0, rN = 0;
+                    const data = [{ v: 22, t: 'N' }, { v: 28, t: 'Y' }, { v: 35, t: 'Y' }, { v: 45, t: 'N' }];
+
+                    data.forEach(d => {
+                        if (d.v < val) { if (d.t === 'Y') lY++; else lN++; }
+                        else { if (d.t === 'Y') rY++; else rN++; }
+                    });
+
+                    const gLeft = calcGiniVal(lY, lN);
+                    const gRight = calcGiniVal(rY, rN);
+
+                    document.getElementById('threshold-val-1').innerText = `Split: Age < ${val}`;
+                    document.getElementById('left-count-1').innerText = `${lY} Yes, ${lN} No`;
+                    document.getElementById('right-count-1').innerText = `${rY} Yes, ${rN} No`;
+                    document.getElementById('left-gini-1').innerText = `Gini: ${gLeft.toFixed(2)}`;
+                    document.getElementById('right-gini-1').innerText = `Gini: ${gRight.toFixed(2)}`;
+                }
+
+                function calcGiniVal(y, n) {
+                    let t = y + n; if (t === 0) return 0;
+                    return 1 - Math.pow(y / t, 2) - Math.pow(n / t, 2);
+                }
+
+                // Gini Lab (Slide 10)
+                let blueCount = 0, redCount = 0;
+                function addBall(color) {
+                    if (blueCount + redCount > 15) return;
+                    const jar = document.getElementById('gini-jar');
+                    const ball = document.createElement('div');
+                    ball.className = `ball ${color}`;
+                    jar.appendChild(ball);
+                    if (color === 'blue') blueCount++; else redCount++;
+                    const total = blueCount + redCount;
+                    const gini = 1 - Math.pow(blueCount / total, 2) - Math.pow(redCount / total, 2);
+                    document.getElementById('gini-score').innerText = gini.toFixed(2);
+                    document.getElementById('gini-calc-text').innerHTML = `1 - (${blueCount}/${total})² - (${redCount}/${total})²`;
+                }
+                function resetJar() {
+                    blueCount = 0; redCount = 0;
+                    document.getElementById('gini-jar').innerHTML = '';
+                    document.getElementById('gini-score').innerText = "0.00";
+                }
+
+                // TREE BUILDER LOGIC (Slide 13)
+                function allowDrop(ev) { ev.preventDefault(); }
+                function drag(ev) { ev.dataTransfer.setData("text", ev.target.innerText); }
+
+                function dropRoot(ev) {
+                    ev.preventDefault();
+                    const data = ev.dataTransfer.getData("text");
+                    document.getElementById('drop-root').innerText = data;
+                    document.getElementById('drop-root').classList.add('filled');
+
+                    const viz = document.getElementById('root-viz');
+                    const l2Container = document.getElementById('level2-container');
+
+                    if (data === 'Student') {
+                        // Student Logic for Example 2
+                        // No -> Pure (High/No, Low/No, High/No). 3 No.
+                        // Yes -> Impure (High/Yes, Low/Yes, Low/No). 2 Yes, 1 No.
+                        viz.innerHTML = `
+                <div style="display:flex; gap:40px; justify-content:center; margin-top:20px;">
+                    <div class="concept-card"><h4 style="color:var(--danger)">No</h4>3 No<div class="node leaf">PURE</div></div>
+                    <div class="concept-card"><h4 style="color:var(--success)">Yes</h4>2 Yes, 1 No<div class="node impure">IMPURE</div></div>
+                </div>`;
+                        l2Container.style.display = 'flex';
+                    } else {
+                        viz.innerHTML = `<div style="margin-top:20px; color:var(--danger);">This split is very impure. Try "Student"!</div>`;
+                        l2Container.style.display = 'none';
+                    }
+                }
+
+                function dropL2(ev) {
+                    ev.preventDefault();
+                    const data = ev.dataTransfer.getData("text");
+                    document.getElementById('drop-l2').innerText = data;
+                    document.getElementById('drop-l2').classList.add('filled');
+
+                    const viz = document.getElementById('l2-viz');
+                    if (data === 'Age') {
+                        // Subset: 28(Y), 40(Y), 20(N).
+                        // Age < 25 -> 20(N) Pure. > 25 -> 28,40(Y) Pure.
+                        viz.innerHTML = `
+                <div style="display:flex; gap:40px; justify-content:center; margin-top:20px;">
+                    <div class="concept-card"><h4>< 25</h4>1 No<div class="node leaf">PURE</div></div>
+                    <div class="concept-card"><h4>> 25</h4>2 Yes<div class="node leaf">PURE</div></div>
+                </div>
+                <h3 style="color:var(--success); margin-top:20px;">PERFECT TREE!</h3>`;
+                    } else {
+                        viz.innerHTML = `<div style="margin-top:10px;">Still impure... try Age.</div>`;
+                    }
+                }
+
+                // Prediction Animation (Slide 15)
+                function runPrediction() {
+                    const dot = document.getElementById('pred-dot');
+                    const root = document.getElementById('p-node-1');
+                    const dec = document.getElementById('p-node-3');
+                    const leaf = document.getElementById('p-node-4'); // Yes->Age<25->No(Left)
+
+                    // Path: Student? -> Yes (Right) -> Age<25? -> Yes (Left) -> No
+                    // Wait, Age < 25 is TRUE for 20.
+                    // My tree diagram has Yes/No leaves reversed visually maybe?
+                    // Let's force path: Root -> Right (Yes) -> Left (Age<25) -> Result No.
+
+                    dot.style.display = 'block';
+                    dot.style.top = root.offsetTop + 25 + 'px';
+                    dot.style.left = root.offsetLeft + root.offsetWidth / 2 + 'px';
+
+                    setTimeout(() => { // Move to Student=Yes branch (Right side implicitly in logic, left in visual? No logic says right)
+                        // Let's visually go to Node 3 (Age split)
+                        dot.style.top = dec.offsetTop + 25 + 'px';
+                        dot.style.left = dec.offsetLeft + dec.offsetWidth / 2 + 'px';
+                    }, 1000);
+
+                    setTimeout(() => { // Age < 25 is Yes -> Go to Leaf 4
+                        dot.style.top = leaf.offsetTop + 25 + 'px';
+                        dot.style.left = leaf.offsetLeft + leaf.offsetWidth / 2 + 'px';
+                    }, 2000);
+
+                    setTimeout(() => {
+                        dot.style.transform = "scale(3)";
+                        dot.style.opacity = 0;
+                    }, 3000);
+
+                    setTimeout(() => {
+                        dot.style.display = 'none';
+                        dot.style.transform = "scale(1)";
+                        dot.style.opacity = 1;
+                    }, 3500);
+                }
+
+                // Init
+                updateThreshold1();
+            </script>
+</body>
+
+</html>

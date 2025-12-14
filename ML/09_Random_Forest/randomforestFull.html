@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inceptez: Random Forest Ultimate Guide</title>
+    <style>
+        :root {
+            --primary: #2C3E50;
+            --brand: #f39c12;
+            /* Inceptez Gold */
+            --accent: #e74c3c;
+            --logic: #3498db;
+            --bg: #f8f9fa;
+            --text: #333;
+            --success: #27ae60;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+        }
+
+        /* --- UI Elements --- */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            z-index: 1000;
+        }
+
+        .logo {
+            font-weight: 900;
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+
+        .logo span {
+            color: var(--brand);
+        }
+
+        .slide-counter {
+            font-size: 1rem;
+            color: #888;
+            margin-right: 80px;
+        }
+
+        /* --- Slide Engine --- */
+        .slide-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .slide {
+            position: absolute;
+            width: 85%;
+            max-width: 1300px;
+            height: 85%;
+            opacity: 0;
+            transform: translateX(60px);
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            /* Smooth ease */
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: all;
+        }
+
+        .slide.prev {
+            opacity: 0;
+            transform: translateX(-60px);
+        }
+
+        /* --- Content Styling --- */
+        h1 {
+            font-size: 3.5rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+            line-height: 1.1;
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            color: var(--primary);
+            margin-bottom: 25px;
+            border-left: 6px solid var(--brand);
+            padding-left: 20px;
+            display: inline-block;
+        }
+
+        h3 {
+            color: var(--logic);
+            font-size: 1.5rem;
+            margin: 15px 0 5px 0;
+        }
+
+        p {
+            font-size: 1.25rem;
+            line-height: 1.6;
+            color: #444;
+            margin-bottom: 15px;
+            max-width: 900px;
+        }
+
+        .box {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+            margin-top: 20px;
+            border: 1px solid #e9ecef;
+            transition: transform 0.2s;
+        }
+
+        .box:hover {
+            transform: translateY(-2px);
+        }
+
+        .flex-row {
+            display: flex;
+            gap: 30px;
+            width: 100%;
+            align-items: flex-start;
+        }
+
+        .flex-col {
+            flex: 1;
+        }
+
+        /* --- Interactive Components --- */
+        .btn {
+            background: var(--brand);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            background: #e67e22;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .doubt-bubble {
+            background: #e8f6f3;
+            border-left: 4px solid var(--success);
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+            color: #2c3e50;
+            display: none;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* --- Simulation Specifics --- */
+        .tree-visual {
+            text-align: center;
+            position: relative;
+        }
+
+        .node {
+            background: white;
+            border: 2px solid var(--primary);
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: inline-block;
+            margin: 5px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .leaf {
+            color: white;
+            border: none;
+        }
+
+        .leaf.yes {
+            background: var(--accent);
+        }
+
+        /* Red for Yes */
+        .leaf.no {
+            background: var(--success);
+        }
+
+        /* Green for No */
+
+        /* Proximity Matrix Grid */
+        .matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            margin-top: 20px;
+            width: 300px;
+        }
+
+        .matrix-cell {
+            background: #eee;
+            padding: 15px;
+            text-align: center;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .matrix-cell.highlight {
+            background: var(--brand);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        /* --- Navigation --- */
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            right: 40px;
+            z-index: 2000;
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-btn {
+            width: 55px;
+            height: 55px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .nav-btn:hover {
+            background: var(--brand);
+        }
+
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 6px;
+            background: var(--brand);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo">Inceptez <span>Technologies</span></div>
+        <div class="slide-counter" id="counter">Slide 1 / 35</div>
+    </header>
+
+    <div class="progress-bar" id="progressBar"></div>
+
+    <div class="slide-container">
+
+        <div class="slide active">
+            <h1>Ensemble Learning & Random Forest</h1>
+            <h3>The Ultimate Industry Guide</h3>
+            <p>From Decision Trees to Proximity Matrices & Boosting.</p>
+            <div class="box">
+                <p><strong>What we will master today:</strong></p>
+                <ul style="columns: 2; -webkit-columns: 2;">
+                    <li>The Philosophy of Ensembles</li>
+                    <li>Bootstrapping (The Math)</li>
+                    <li>Random Forest Construction</li>
+                    <li>OOB Evaluation (Free Testing!)</li>
+                    <li><strong>Interactive Proximity Matrix</strong></li>
+                    <li>Clustering with RF</li>
+                    <li>Intro to Boosting (XG/Ada)</li>
+                </ul>
+            </div>
+            <p style="margin-top: 30px; color: #999;">Navigate using Arrow Keys ⬅️ ➡️ or Buttons</p>
+        </div>
+
+        <div class="slide">
+            <h2>1. The Foundation: A Single Tree</h2>
+            <p>Before we build a forest, let's look at a single tree.</p>
+            <div class="flex-row">
+                <div class="flex-col">
+                    <p>A Decision Tree is a rule-based system.</p>
+                    <p>It's intuitive. It's interpretable.</p>
+                    <p><strong>But it has a fatal flaw.</strong></p>
+                </div>
+                <div class="flex-col box tree-visual">
+                    <div class="node">Is Age > 50?</div><br>
+                    <span style="font-size: 2rem;">↙ &nbsp; ↘</span><br>
+                    <div class="node">Is Smoker?</div>
+                    <div class="node leaf no">Low Risk</div><br>
+                    <span style="font-size: 2rem;">↙ &nbsp; ↘</span><br>
+                    <div class="node leaf yes">High Risk</div>
+                    <div class="node leaf no">Low Risk</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>The Flaw: High Variance</h2>
+            <p>Imagine training a tree on Monday's data. Then training another on Tuesday's data.</p>
+            <div class="box" style="border-left: 5px solid var(--accent);">
+                <h3>The Sensitivity Problem</h3>
+                <p>Single trees are incredibly sensitive to noise.</p>
+                <p>If you change one data point, the whole tree structure might change.</p>
+                <p>This is called <strong>Overfitting</strong> (High Variance).</p>
+            </div>
+            <button class="btn" onclick="document.getElementById('doubt-1').style.display='block'">Wait, what is
+                Bias?</button>
+            <div id="doubt-1" class="doubt-bubble">
+                <strong>Question:</strong> "If Trees have High Variance, what about Bias?"<br>
+                <strong>Answer:</strong> Trees usually have <em>Low Bias</em>. They are very smart and flexible. They
+                just panic easily when they see new data.
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>2. The Solution: Ensemble Learning</h2>
+            <p><strong>Philosophy:</strong> The Wisdom of the Crowd.</p>
+            <div class="flex-row">
+                <div class="flex-col box" style="text-align: center;">
+                    <div style="font-size: 3rem;">👨‍⚕️</div>
+                    <h3>One Doctor</h3>
+                    <p>Can make a mistake.</p>
+                    <p>Might be tired.</p>
+                    <p><strong>High Variance.</strong></p>
+                </div>
+                <div class="flex-col box" style="text-align: center;">
+                    <div style="font-size: 3rem;">👨‍⚕️👩‍⚕️👨‍⚕️👩‍⚕️</div>
+                    <h3>100 Doctors</h3>
+                    <p>Different schools.</p>
+                    <p>Different specialties.</p>
+                    <p><strong>Low Variance.</strong></p>
+                </div>
+            </div>
+            <p><em>Random Forest is simply a committee of Decision Trees.</em></p>
+        </div>
+
+        <div class="slide">
+            <h2>The Challenge: Cloning Data</h2>
+            <p>To have 100 "different" doctors, we need 100 "different" textbooks.</p>
+            <p>But we only have <strong>one dataset</strong>.</p>
+            <div class="box">
+                <h3>How do we create diversity from a single source?</h3>
+                <p>We use a statistical trick called <strong>Bootstrapping</strong>.</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>3. Simulation: Bootstrapping</h2>
+            <p><strong>Rule:</strong> Random sampling <em>with replacement</em>.</p>
+            <p>Original Data: <span style="font-weight:bold; color:var(--logic);">[ A, B, C, D ]</span></p>
+
+            <div class="box" style="text-align: center;">
+                <p>Let's generate a dataset for <strong>Tree #1</strong>.</p>
+                <button class="btn" onclick="runBootstrap()">Draw Sample</button>
+                <div id="boot-anim" style="margin-top:20px; font-size: 2rem; min-height: 50px;"></div>
+            </div>
+            <div id="boot-explain" class="doubt-bubble">
+                <strong>Look closely!</strong> 'B' was picked twice. 'C' is missing.<br>
+                The missing 'C' is called the <strong>Out-of-Bag (OOB)</strong> sample. We use it later for testing!
+            </div>
+
+            <script>
+                function runBootstrap() {
+                    const data = ['A', 'B', 'B', 'D'];
+                    document.getElementById('boot-anim').innerHTML = `[ <span style="color:var(--brand)">${data.join(', ')}</span> ]`;
+                    document.getElementById('boot-explain').style.display = 'block';
+                }
+            </script>
+        </div>
+
+        <div class="slide">
+            <h2>Bagging (Bootstrap Aggregating)</h2>
+            <p>If we train trees on these bootstrapped samples and average them, it's called <strong>Bagging</strong>.
+            </p>
+            <p>But... Bagging has a weakness.</p>
+            <div class="box" style="border-left: 5px solid var(--accent);">
+                <h3>The Correlation Trap</h3>
+                <p>If there is one "Super Feature" (e.g., Income), <strong>every single tree</strong> will use it as the
+                    root node.</p>
+                <p>The trees will all look the same.</p>
+                <p>We need to force them to be different.</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>4. The Random Forest "Twist"</h2>
+            <p>We introduce a second layer of randomness.</p>
+            <div class="flex-row">
+                <div class="flex-col box">
+                    <h3>Standard Tree</h3>
+                    <p>Looks at ALL features.</p>
+                    <p>Picks the absolute best split.</p>
+                </div>
+                <div class="flex-col box" style="background: #fff8e1;">
+                    <h3>Random Forest Tree</h3>
+                    <p>At each split, selects a <span style="color:var(--accent); font-weight:bold;">Random
+                            Subset</span> of features.</p>
+                    <p>Picks the best <em>from that subset</em>.</p>
+                </div>
+            </div>
+            <p><em>This forces trees to consider "weaker" features, making the forest robust.</em></p>
+        </div>
+
+        <div class="slide">
+            <h2>The Simulation Dataset</h2>
+            <p>We will use this data for the rest of the slides.</p>
+
+            <table style="width:100%; border-collapse: collapse; background: white; text-align: center;">
+                <tr style="background:var(--primary); color:white;">
+                    <th>Patient</th>
+                    <th>Chest Pain</th>
+                    <th>Arteries Blocked</th>
+                    <th>Weight > 90kg</th>
+                    <th>Target: HD?</th>
+                </tr>
+                <tr>
+                    <td><strong>A</strong></td>
+                    <td>Yes</td>
+                    <td>No</td>
+                    <td>Yes</td>
+                    <td style="color:var(--accent); font-weight:bold;">YES</td>
+                </tr>
+                <tr>
+                    <td><strong>B</strong></td>
+                    <td>Yes</td>
+                    <td>Yes</td>
+                    <td>No</td>
+                    <td style="color:var(--accent); font-weight:bold;">YES</td>
+                </tr>
+                <tr>
+                    <td><strong>C</strong></td>
+                    <td>No</td>
+                    <td>Yes</td>
+                    <td>Yes</td>
+                    <td style="color:var(--success); font-weight:bold;">NO</td>
+                </tr>
+                <tr>
+                    <td><strong>D</strong></td>
+                    <td>No</td>
+                    <td>No</td>
+                    <td>No</td>
+                    <td style="color:var(--success); font-weight:bold;">NO</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="slide">
+            <h2>Building Tree #1: Root Node</h2>
+            <p><strong>Bootstrap Data:</strong> [A, B, B, D]</p>
+            <p><strong>Available Features:</strong> [Chest Pain, Arteries, Weight]</p>
+
+            <div class="box">
+                <p>The algorithm randomly selects <strong>2 features</strong> to consider.</p>
+                <button class="btn" onclick="document.getElementById('rf-sel-1').style.display='block'">Random
+                    Selection</button>
+                <div id="rf-sel-1" style="display:none; margin-top:15px; font-size:1.2rem;">
+                    Selection: <span style="color:var(--logic); font-weight:bold;">[Arteries, Weight]</span><br>
+                    <span style="font-size:0.9rem; color:#888;">(Chest Pain was hidden!)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Building Tree #1: The Split</h2>
+            <p>Between [Arteries] and [Weight], the algorithm calculates which splits the data better (Gini Impurity).
+            </p>
+            <div class="tree-visual box">
+                <div class="node">Arteries Blocked?</div>
+                <br><span style="font-size: 2rem;">↙ &nbsp; ↘</span><br>
+                <div class="node leaf yes">YES (High Risk)</div>
+                <div class="node leaf no">NO (Low Risk)</div>
+            </div>
+            <p><em>Notice: This tree never learned about Chest Pain. It is unique.</em></p>
+        </div>
+
+        <div class="slide">
+            <h2>Building Tree #2: Root Node</h2>
+            <p><strong>Bootstrap Data:</strong> [A, C, C, D] (Different data!)</p>
+            <div class="box">
+                <p>The algorithm randomly selects <strong>2 different features</strong>.</p>
+                <button class="btn" onclick="document.getElementById('rf-sel-2').style.display='block'">Random
+                    Selection</button>
+                <div id="rf-sel-2" style="display:none; margin-top:15px; font-size:1.2rem;">
+                    Selection: <span style="color:var(--logic); font-weight:bold;">[Chest Pain, Weight]</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Building Tree #2: The Split</h2>
+            <p>This tree splits on Chest Pain.</p>
+            <div class="tree-visual box">
+                <div class="node">Chest Pain?</div>
+                <br><span style="font-size: 2rem;">↙ &nbsp; ↘</span><br>
+                <div class="node leaf yes">YES</div>
+                <div class="node leaf no">NO</div>
+            </div>
+            <p><em>We now have two very different experts.</em></p>
+        </div>
+
+        <div class="slide">
+            <h2>How deep do they go?</h2>
+            <p>In Random Forest, trees are usually grown <strong>deep</strong> (unlike Boosting).</p>
+            <p>We split until:</p>
+            <ol>
+                <li>The leaf is pure (all Yes or all No).</li>
+                <li>We hit the <code>min_samples_leaf</code> limit (e.g., need at least 5 patients).</li>
+            </ol>
+            <button class="btn" onclick="document.getElementById('doubt-2').style.display='block'">Why grow them
+                deep?</button>
+            <div id="doubt-2" class="doubt-bubble">
+                Deep trees have <strong>Low Bias</strong> (they capture details). The high variance is canceled out by
+                the averaging later.
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>5. Prediction Time</h2>
+            <p><strong>New Patient X:</strong> [Chest Pain: YES, Arteries: NO, Weight: HIGH]</p>
+            <p>We pass Patient X through 100 trees.</p>
+            <div class="flex-row">
+                <div class="box flex-col" style="text-align:center;">
+                    <h4>Tree 1</h4>
+                    <p>(Used Arteries)</p>
+                    <div class="node leaf no">Says: NO</div>
+                </div>
+                <div class="box flex-col" style="text-align:center;">
+                    <h4>Tree 2</h4>
+                    <p>(Used Chest Pain)</p>
+                    <div class="node leaf yes">Says: YES</div>
+                </div>
+                <div class="box flex-col" style="text-align:center;">
+                    <h4>Tree 3</h4>
+                    <p>(Used Weight)</p>
+                    <div class="node leaf yes">Says: YES</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>The Final Vote</h2>
+            <p><strong>Scenario:</strong> 70 trees say YES, 30 trees say NO.</p>
+            <div class="box" style="text-align:center; padding: 40px;">
+                <h2>Majority Vote Wins</h2>
+                <h1 style="color:var(--accent);">PREDICTION: YES</h1>
+                <p>(Probability: 0.70)</p>
+            </div>
+            <p><em>For Regression (predicting numbers), we just take the Average.</em></p>
+        </div>
+
+        <div class="slide">
+            <h2>6. Evaluating the Model (OOB)</h2>
+            <p>Normally, you hide 20% of data for testing. In RF, you don't have to!</p>
+            <p>Remember the <strong>Out-of-Bag (OOB)</strong> samples?</p>
+            <div class="box">
+                <p><strong>Fact:</strong> About 36% of data is left out of <em>each</em> tree due to bootstrapping.</p>
+                <p>We use this hidden data to test that specific tree.</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Calculating OOB Score</h2>
+            <p><strong>Patient A</strong> was used in Tree 1 and Tree 2.</p>
+            <p><strong>Patient A</strong> was OOB (ignored) for Tree 3 and Tree 4.</p>
+            <div class="box" style="border-left: 5px solid var(--logic);">
+                <h3>The Logic:</h3>
+                <p>Pass Patient A <em>only</em> through Tree 3 and Tree 4.</p>
+                <p>Take the vote.</p>
+                <p>Compare to Patient A's true status.</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>7. Advanced: Proximity Matrix</h2>
+            <p>This is a hidden superpower of Random Forest.</p>
+            <p>It answers: <strong>"How similar are Patient A and Patient B?"</strong></p>
+            <p>We can measure similarity without calculating Euclidean distance!</p>
+        </div>
+
+        <div class="slide">
+            <h2>How Proximity Works</h2>
+            <p>1. Run all data down all trees.</p>
+            <p>2. If Patient A and Patient B end up in the <strong>same leaf node</strong>, increase their score by 1.
+            </p>
+            <p>3. Normalize by dividing by total number of trees.</p>
+        </div>
+
+        <div class="slide">
+            <h2>Interactive Proximity Matrix</h2>
+            <p>Let's simulate 3 Trees. Watch the score between <strong>Patient A</strong> and <strong>Patient
+                    B</strong>.</p>
+
+            <div class="flex-row">
+                <div class="flex-col">
+                    <button class="btn" onclick="simProx()">Run Tree 1</button>
+                    <button class="btn" onclick="simProx2()">Run Tree 2</button>
+                    <div id="tree-status" style="margin-top:20px; font-weight:bold;"></div>
+                </div>
+                <div class="flex-col">
+                    <table border="1"
+                        style="width:100%; text-align:center; border-collapse:collapse; background:white;">
+                        <tr>
+                            <th></th>
+                            <th>A</th>
+                            <th>B</th>
+                        </tr>
+                        <tr>
+                            <th>A</th>
+                            <td>1.0</td>
+                            <td id="prox-cell" style="background:#eee; transition:all 0.5s;">0</td>
+                        </tr>
+                        <tr>
+                            <th>B</th>
+                            <td id="prox-cell-2" style="background:#eee; transition:all 0.5s;">0</td>
+                            <td>1.0</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <script>
+                let score = 0;
+                function simProx() {
+                    score++;
+                    document.getElementById('tree-status').innerHTML = "Tree 1: Both landed in 'High Risk' Leaf! (+1)";
+                    updateMatrix();
+                }
+                function simProx2() {
+                    score++;
+                    document.getElementById('tree-status').innerHTML = "Tree 2: Both landed in 'Smoker' Leaf! (+1)";
+                    updateMatrix();
+                }
+                function updateMatrix() {
+                    document.getElementById('prox-cell').innerText = score;
+                    document.getElementById('prox-cell-2').innerText = score;
+                    document.getElementById('prox-cell').style.background = '#ffeaa7';
+                    document.getElementById('prox-cell-2').style.background = '#ffeaa7';
+                    setTimeout(() => {
+                        document.getElementById('prox-cell').style.background = '#fff';
+                        document.getElementById('prox-cell-2').style.background = '#fff';
+                    }, 500);
+                }
+            </script>
+        </div>
+
+        <div class="slide">
+            <h2>Use Case 1: Missing Data Imputation</h2>
+            <p>Patient A has missing "Weight".</p>
+            <div class="box">
+                <ol>
+                    <li>Fill missing value with Median (Guess).</li>
+                    <li>Run Forest. Calculate Proximity Matrix.</li>
+                    <li>See that Patient A is 90% similar to Patient B (who has weight 80kg).</li>
+                    <li>Update Patient A's weight to be closer to 80kg (Weighted Average).</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Use Case 2: Clustering</h2>
+            <p>Using the Proximity Matrix (Similarity Scores), we can perform <strong>MDS (Multi-Dimensional
+                    Scaling)</strong>.</p>
+            <p>We can plot data points in 2D space.</p>
+            <p>Points that land in same leaves often will cluster together visually.</p>
+        </div>
+
+        <div class="slide">
+            <h2>8. Tuning the Forest</h2>
+            <p>What should you change in Python?</p>
+            <ul style="line-height:2;">
+                <li><code>n_estimators</code>: Start with 100. More is safer.</li>
+                <li><code>max_depth</code>: None (Grow full). Limit only if data is huge.</li>
+                <li><code>max_features</code>: <span style="color:var(--brand); font-weight:bold;">SQRT</span> of total
+                    features (Classification).</li>
+                <li><code>min_samples_leaf</code>: 1, 5, or 10. Prevents isolating single noisy records.</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>Anticipating Doubts: Overfitting</h2>
+            <p><strong>"If I add 10,000 trees, will I overfit?"</strong></p>
+            <div class="box" style="text-align: center;">
+                <h1 style="color:var(--success);">NO.</h1>
+                <p>Random Forest does not overfit as you add trees.</p>
+                <p>The error rate stabilizes (flatlines).</p>
+                <p>You are just averaging more opinions, which reduces variance.</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Why we love Random Forest</h2>
+            <div class="flex-row">
+                <div class="flex-col box">
+                    <ul style="line-height:1.8;">
+                        <li>✅ Handles Non-Linearity.</li>
+                        <li>✅ Handles Missing Data.</li>
+                        <li>✅ No Feature Scaling needed.</li>
+                        <li>✅ Robust to Outliers.</li>
+                    </ul>
+                </div>
+                <div class="flex-col box">
+                    <ul style="line-height:1.8;">
+                        <li>✅ Gives Feature Importance.</li>
+                        <li>✅ Free OOB Validation.</li>
+                        <li>✅ Parallelizable (Fast training).</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>The Downsides</h2>
+            <p>It's not perfect.</p>
+            <div class="box">
+                <ul>
+                    <li>❌ <strong>Slow Prediction:</strong> Needs to ask 100 trees for every prediction. (Not good for
+                        high-frequency trading).</li>
+                    <li>❌ <strong>Black Box:</strong> Hard to explain exactly <em>why</em> a decision was made compared
+                        to a single tree.</li>
+                    <li>❌ <strong>Memory:</strong> Storing 100 trees takes RAM.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>9. The Next Evolution: Boosting</h2>
+            <p>Random Forest is amazing. But can we do better?</p>
+            <p>Random Forest trees are <strong>Independent</strong>. They ignore each other.</p>
+            <div class="box" style="border-left: 5px solid var(--accent);">
+                <h3>The Sequential Idea</h3>
+                <p>What if Tree 2 learned from Tree 1's mistakes?</p>
+                <p>What if we built a "Team of Specialists" instead of a "Committee"?</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Boosting Visualization</h2>
+            <div class="flex-row">
+                <div class="box flex-col" style="text-align:center;">
+                    <h3>Step 1</h3>
+                    <p>Train Model.</p>
+                    <p>Identify Errors.</p>
+                </div>
+                <div style="font-size:3rem; margin-top:50px;">➡️</div>
+                <div class="box flex-col" style="text-align:center; background:#e8f8f5;">
+                    <h3>Step 2</h3>
+                    <p><strong>Focus</strong> on Errors.</p>
+                    <p>Train Correction Model.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>AdaBoost (Adaptive Boosting)</h2>
+            <p><strong>Mechanism:</strong></p>
+            <ol>
+                <li>Build a Stump (Tiny Tree).</li>
+                <li>Find the misclassified patients.</li>
+                <li><strong>Increase the Weight</strong> of those patients (make them "heavier").</li>
+                <li>Build the next stump to focus on the heavy patients.</li>
+            </ol>
+        </div>
+
+        <div class="slide">
+            <h2>XGBoost (Gradient Boosting)</h2>
+            <p>The Industry King.</p>
+            <p><strong>Mechanism:</strong></p>
+            <p>It doesn't weight data. It fits the next tree to the <strong>Residuals</strong> (Errors).</p>
+            <div class="box" style="font-family: monospace;">
+                Tree 1 Pred: 100k <br>
+                Actual: 120k <br>
+                Error: +20k <br>
+                <br>
+                Tree 2 Target: Predict "+20k"
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Comparison Table</h2>
+            <table style="width:100%; border-collapse:collapse; background:white; text-align:center;">
+                <tr style="background:var(--primary); color:white; height:50px;">
+                    <th>Feature</th>
+                    <th>Random Forest (Bagging)</th>
+                    <th>XGBoost (Boosting)</th>
+                </tr>
+                <tr style="height:50px; border-bottom:1px solid #ddd;">
+                    <td>Tree Depth</td>
+                    <td>Deep</td>
+                    <td>Shallow (Stumps)</td>
+                </tr>
+                <tr style="height:50px; border-bottom:1px solid #ddd;">
+                    <td>Order</td>
+                    <td>Parallel</td>
+                    <td>Sequential</td>
+                </tr>
+                <tr style="height:50px; border-bottom:1px solid #ddd;">
+                    <td>Goal</td>
+                    <td>Reduce Variance</td>
+                    <td>Reduce Bias & Variance</td>
+                </tr>
+                <tr style="height:50px; border-bottom:1px solid #ddd;">
+                    <td>Overfitting</td>
+                    <td>Rare</td>
+                    <td>Can overfit easily</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="slide">
+            <h2>Quick Quiz</h2>
+            <p>In Random Forest, if I increase <code>n_estimators</code> from 100 to 1000, what happens to the Test
+                Error?</p>
+            <div class="flex-row">
+                <button class="btn" onclick="alert('Incorrect! RF does not overfit with more trees.')">It increases
+                    (Overfit)</button>
+                <button class="btn" onclick="alert('Correct! It stabilizes.')">It stabilizes</button>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Quick Quiz</h2>
+            <p>For a dataset with 100 features, what is the recommended <code>max_features</code> for a Classification
+                Random Forest?</p>
+            <div class="flex-row">
+                <button class="btn" onclick="alert('No! That is for Regression usually.')">100 (All)</button>
+                <button class="btn" onclick="alert('Correct! Square Root of 100 is 10.')">10 (Sqrt)</button>
+                <button class="btn" onclick="alert('Too small.')">1 (Log2)</button>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1>Thank You!</h1>
+            <h3>Inceptez Technologies</h3>
+            <p>You are now ready to implement Random Forest.</p>
+            <div class="box">
+                <p><strong>Next Steps:</strong></p>
+                <ul>
+                    <li>Open the Jupyter Notebook.</li>
+                    <li>Import <code>RandomForestClassifier</code> from sklearn.ensemble.</li>
+                    <li>Try calculating OOB Score yourself!</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="controls">
+        <button class="nav-btn" onclick="prevSlide()">❮</button>
+        <button class="nav-btn" onclick="nextSlide()">❯</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progressBar');
+        const counter = document.getElementById('counter');
+
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active', 'prev');
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                } else if (index < currentSlide) {
+                    slide.classList.add('prev');
+                }
+            });
+
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            progressBar.style.width = progress + '%';
+            counter.innerText = `Slide ${currentSlide + 1} / ${slides.length}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+
+        updateSlide();
+    </script>
+
+</body>
+
+</html>

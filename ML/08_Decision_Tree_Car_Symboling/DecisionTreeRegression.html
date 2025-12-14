@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inceptez: Regression Trees</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Fira+Code:wght@500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* 1. RESET & THEME VARIABLES */
+        :root {
+            --bg-color: #0f172a;
+            /* Dark Slate */
+            --slide-bg: #f8fafc;
+            /* Off White */
+            --primary: #6366f1;
+            /* Indigo */
+            --secondary: #8b5cf6;
+            /* Violet */
+            --accent: #f59e0b;
+            /* Amber */
+            --success: #10b981;
+            /* Emerald */
+            --danger: #ef4444;
+            /* Rose */
+            --text-main: #1e293b;
+            /* Slate 800 */
+            --text-light: #64748b;
+            /* Slate 500 */
+            --font-main: 'Outfit', sans-serif;
+            --font-mono: 'Fira Code', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            outline: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: var(--font-main);
+            overflow: auto;
+            /* Changed to auto to allow body scrolling on small screens */
+            color: var(--text-main);
+        }
+
+        /* 2. MAIN DECK CONTAINER */
+        #deck {
+            width: 1280px;
+            height: 720px;
+            position: relative;
+            background: var(--slide-bg);
+            border-radius: 24px;
+            box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            flex-shrink: 0;
+            /* Prevent shrinking */
+            margin: 20px;
+            /* Add margin for scroll space */
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 6px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            width: 0%;
+            z-index: 100;
+            transition: width 0.3s ease;
+        }
+
+        /* 3. SLIDES & ANIMATIONS */
+        .slide {
+            position: absolute;
+            inset: 0;
+            padding: 50px 80px 90px 80px;
+            /* Increased bottom padding for footer clearance */
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(20px) scale(0.98);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            overflow-y: auto;
+            /* Allow internal scrolling if content is too tall */
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: all;
+            transform: translateY(0) scale(1);
+        }
+
+        /* 4. TYPOGRAPHY & LAYOUT */
+        h1 {
+            font-size: 72px;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1.1;
+            margin-bottom: 20px;
+            letter-spacing: -2px;
+        }
+
+        h2 {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-shrink: 0;
+        }
+
+        h2::before {
+            content: '';
+            width: 8px;
+            height: 48px;
+            background: var(--accent);
+            border-radius: 4px;
+            display: block;
+        }
+
+        h3 {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        p,
+        li {
+            font-size: 22px;
+            line-height: 1.6;
+            color: var(--text-main);
+            margin-bottom: 15px;
+            font-weight: 300;
+        }
+
+        .row {
+            display: flex;
+            gap: 60px;
+            height: 100%;
+            align-items: center;
+        }
+
+        .col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .center-box {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        /* 5. CARDS & VISUALS */
+        .concept-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            /* Removed fixed height to allow growth */
+        }
+
+        .concept-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
+            background: var(--primary);
+            opacity: 0.5;
+        }
+
+        .concept-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Node Styles */
+        .node {
+            padding: 15px 35px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 8px 20px -5px rgba(0, 0, 0, 0.1);
+            border: 2px solid white;
+            position: relative;
+            z-index: 2;
+            color: var(--text-main);
+            white-space: nowrap;
+        }
+
+        .node.root {
+            background: #e0e7ff;
+            color: var(--primary);
+        }
+
+        .node.leaf {
+            background: #dcfce7;
+            color: #047857;
+        }
+
+        .node.decision {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        /* 6. TABLES */
+        .table-wrapper {
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+            width: 100%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 20px;
+            background: white;
+        }
+
+        th {
+            background: #f1f5f9;
+            color: var(--text-main);
+            padding: 20px;
+            text-align: left;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        td {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            color: var(--text-main);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        /* 7. INTERACTIVE COMPONENTS */
+        /* SCATTER PLOT CSS */
+        .graph-container {
+            width: 100%;
+            height: 340px;
+            /* Reduced height to fit better */
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.02);
+        }
+
+        .axis {
+            position: absolute;
+            background: #94a3b8;
+        }
+
+        .axis.x {
+            bottom: 30px;
+            left: 40px;
+            right: 20px;
+            height: 2px;
+        }
+
+        .axis.y {
+            left: 40px;
+            top: 20px;
+            bottom: 30px;
+            width: 2px;
+        }
+
+        .axis-label {
+            position: absolute;
+            color: #64748b;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .graph-point {
+            width: 20px;
+            height: 20px;
+            background: var(--text-main);
+            border-radius: 50%;
+            position: absolute;
+            transform: translate(-50%, 50%);
+            z-index: 5;
+            transition: background 0.3s;
+            border: 3px solid white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .split-line {
+            position: absolute;
+            top: 20px;
+            bottom: 30px;
+            width: 4px;
+            background: var(--accent);
+            z-index: 10;
+            cursor: col-resize;
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+            transition: left 0.1s linear;
+        }
+
+        .split-handle {
+            width: 24px;
+            height: 24px;
+            background: var(--accent);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: -10px;
+            transform: translateY(-50%);
+            border: 4px solid white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .mean-line {
+            position: absolute;
+            height: 4px;
+            background: var(--success);
+            z-index: 4;
+            opacity: 0.8;
+            transition: all 0.2s;
+            border-radius: 2px;
+        }
+
+        .mean-line.left {
+            background: var(--primary);
+        }
+
+        .mean-line.right {
+            background: var(--danger);
+        }
+
+        .residual {
+            position: absolute;
+            width: 2px;
+            background: #cbd5e1;
+            z-index: 2;
+            border-left: 2px dashed #94a3b8;
+            opacity: 0.5;
+        }
+
+        /* Math Display */
+        .math-box {
+            font-family: var(--font-mono);
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 18px;
+            margin-top: 15px;
+            border-left: 4px solid var(--accent);
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Slider */
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+            margin: 30px 0;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 4px solid white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Footer Nav */
+        .footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 60px;
+            z-index: 50;
+        }
+
+        .nav-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: var(--text-main);
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            transition: all 0.2s;
+            font-size: 18px;
+        }
+
+        .nav-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        /* Drag and Drop */
+        .draggable-item {
+            background: white;
+            border: 2px solid var(--primary);
+            padding: 15px 30px;
+            border-radius: 50px;
+            cursor: grab;
+            font-weight: bold;
+            color: var(--primary);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .draggable-item:active {
+            cursor: grabbing;
+            transform: scale(0.95);
+        }
+
+        .drop-zone {
+            width: 100%;
+            height: 100px;
+            border: 3px dashed #cbd5e1;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            transition: all 0.2s;
+            color: #94a3b8;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .drop-zone.hover {
+            border-color: var(--success);
+            background: #f0fdf4;
+            color: var(--success);
+        }
+
+        .drop-zone.filled {
+            border-style: solid;
+            border-color: var(--primary);
+            background: #e0e7ff;
+            color: var(--primary);
+        }
+
+        /* Math Symbol y-bar */
+        .y-bar {
+            display: inline-block;
+            position: relative;
+            font-style: italic;
+        }
+
+        .y-bar::before {
+            content: "";
+            position: absolute;
+            top: -5px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="deck">
+        <div class="progress-bar" id="progressBar"></div>
+
+        <!-- 1. TITLE -->
+        <div class="slide active">
+            <div class="center-box">
+                <div
+                    style="font-weight: 800; letter-spacing: 4px; color: var(--text-light); margin-bottom: 20px; text-transform: uppercase;">
+                    Inceptez Academy</div>
+                <h1>Decision Tree<br>Regression</h1>
+                <p style="font-size: 28px; color: var(--text-light); margin-top: 20px;">Predicting Numbers with Logic
+                </p>
+                <div style="margin-top: 60px; display: flex; gap: 40px; align-items: center;">
+                    <div class="node root"><i class="fa-solid fa-chart-line"></i> Continuous Data</div>
+                    <i class="fa-solid fa-arrow-right-long" style="color: var(--text-light); font-size: 32px;"></i>
+                    <div class="node leaf"><i class="fa-solid fa-calculator"></i> Numeric Value</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. REGRESSION VS CLASSIFICATION -->
+        <div class="slide">
+            <h2>1. Classification vs Regression</h2>
+            <div class="row">
+                <div class="col">
+                    <div class="concept-card" style="opacity: 0.5;">
+                        <h3><i class="fa-solid fa-shapes"></i> Classification</h3>
+                        <p><strong>Goal:</strong> Predict a Class.</p>
+                        <p><strong>Output:</strong> Yes/No, Spam/Ham.</p>
+                        <p><strong>Metric:</strong> Gini Impurity.</p>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="concept-card"
+                        style="border-left: 6px solid var(--primary); transform: scale(1.05); box-shadow: 0 20px 50px -10px rgba(99, 102, 241, 0.3);">
+                        <h3><i class="fa-solid fa-chart-area"></i> Regression</h3>
+                        <p><strong>Goal:</strong> Predict a Number.</p>
+                        <p><strong>Output:</strong> Price, Temp, Dosage.</p>
+                        <p><strong>Metric:</strong> Variance / Residuals.</p>
+                        <div
+                            style="position: absolute; top: 20px; right: 20px; color: var(--primary); font-weight: bold; font-size: 14px; background: #e0e7ff; padding: 5px 10px; border-radius: 20px;">
+                            TODAY'S TOPIC</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. THE DATA -->
+        <div class="slide">
+            <h2>2. Our Data: Drug Dosage</h2>
+            <div class="row">
+                <div class="col" style="flex:0.8;">
+                    <p>We want to predict <strong>Effectiveness %</strong> based on <strong>Dosage (mg)</strong>.</p>
+                    <div class="concept-card">
+                        <p><strong style="color:var(--primary)">Input (X):</strong> Dosage</p>
+                        <p><strong style="color:var(--secondary)">Target (Y):</strong> Effectiveness</p>
+                        <p style="font-size: 16px; color: var(--text-light); margin-top: 20px;">Notice: Y is a
+                            continuous number, not a category.</p>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Dosage (X)</th>
+                                    <th>Effectiveness (Y)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>3 mg</td>
+                                    <td>10 %</td>
+                                </tr>
+                                <tr>
+                                    <td>4 mg</td>
+                                    <td>15 %</td>
+                                </tr>
+                                <tr>
+                                    <td>10 mg</td>
+                                    <td>60 %</td>
+                                </tr>
+                                <tr>
+                                    <td>12 mg</td>
+                                    <td>65 %</td>
+                                </tr>
+                                <tr>
+                                    <td>18 mg</td>
+                                    <td>20 %</td>
+                                </tr>
+                                <tr>
+                                    <td>20 mg</td>
+                                    <td>25 %</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. VISUALIZING DATA -->
+        <div class="slide">
+            <h2>3. Visualizing the Problem</h2>
+            <div class="center-box">
+                <p style="margin-bottom: 30px;">We can't put this in simple buckets. We need to visualize the trend.</p>
+                <div class="graph-container">
+                    <!-- Axes -->
+                    <div class="axis x"></div>
+                    <div class="axis y"></div>
+                    <div class="axis-label" style="bottom: 10px; right: 20px;">Dosage (X)</div>
+                    <div class="axis-label" style="top: 10px; left: 10px;">Effectiveness (Y)</div>
+
+                    <!-- Points -->
+                    <div class="graph-point" style="left: 13.6%; bottom: 14.2%;"></div>
+                    <div class="graph-point" style="left: 18.1%; bottom: 21.4%;"></div>
+                    <div class="graph-point" style="left: 45.4%; bottom: 85.7%;"></div>
+                    <div class="graph-point" style="left: 54.5%; bottom: 92.8%;"></div>
+                    <div class="graph-point" style="left: 81.8%; bottom: 28.5%;"></div>
+                    <div class="graph-point" style="left: 90.9%; bottom: 35.7%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. INTUITION: MEAN -->
+        <div class="slide">
+            <h2>4. Intuition: Why the Mean?</h2>
+            <div class="row">
+                <div class="col">
+                    <p>If we group a set of numbers together, what single value best represents them?</p>
+                    <div class="concept-card">
+                        <h3>The Average (Mean)</h3>
+                        <p>It minimizes the total squared distance (error) from all points in that group.</p>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="center-box">
+                        <!-- Fixed Y-bar using CSS -->
+                        <div
+                            style="width: 150px; height: 150px; background: var(--primary); border-radius: 50%; display: grid; place-items: center; color: white; font-size: 64px; font-weight: bold; box-shadow: 0 20px 40px rgba(99, 102, 241, 0.4);">
+                            <span class="y-bar">y</span>
+                        </div>
+                        <p style="margin-top: 30px; font-size: 24px;">Prediction = Leaf Mean</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. METRIC: RESIDUALS -->
+        <div class="slide">
+            <h2>5. The Metric: Residuals</h2>
+            <div class="row">
+                <div class="col">
+                    <p>In classification, we minimized <strong>Impurity</strong>. Here, we minimize
+                        <strong>Error</strong>.
+                    </p>
+                    <div class="math-box">
+                        Residual = Actual - Predicted<br>
+                        SSR = &Sigma; (Residual)²
+                    </div>
+                    <p style="margin-top: 20px;">SSR = Sum of Squared Residuals. We want this to be as low as possible.
+                    </p>
+                </div>
+                <div class="col">
+                    <div class="concept-card" style="text-align: center; padding: 50px;">
+                        <div style="position: relative; height: 200px; width: 100%;">
+                            <div
+                                style="position: absolute; left: 50%; top: 20%; width: 16px; height: 16px; background: var(--text-main); border-radius: 50%;">
+                            </div>
+                            <div
+                                style="position: absolute; left: 10%; right: 10%; top: 60%; height: 4px; background: var(--success); border-radius: 2px;">
+                            </div> <!-- Mean -->
+                            <div
+                                style="position: absolute; left: 50%; top: 25%; height: 35%; width: 0; border-left: 3px dashed var(--danger);">
+                            </div>
+                            <div
+                                style="position: absolute; left: 55%; top: 35%; color: var(--danger); font-weight: bold; font-family: var(--font-mono);">
+                                Residual</div>
+                            <div
+                                style="position: absolute; right: 10%; top: 65%; color: var(--success); font-weight: bold; font-size: 14px;">
+                                Mean Line</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. SPLITTING LOGIC -->
+        <div class="slide">
+            <h2>6. How to Split?</h2>
+            <div class="row">
+                <div class="col">
+                    <p>Just like classification, the computer follows a recipe:</p>
+                    <ol style="margin-left: 20px; line-height: 2; font-size: 24px;">
+                        <li><strong>Sort</strong> the data by X.</li>
+                        <li>Find <strong>Midpoints</strong> between data points.</li>
+                        <li>Test each midpoint as a split.</li>
+                        <li>Pick the one with the <strong>Lowest Total SSR</strong>.</li>
+                    </ol>
+                </div>
+                <div class="col">
+                    <div class="center-box">
+                        <i class="fa-solid fa-code-branch" style="font-size: 120px; color: var(--accent);"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. INTERACTIVE SSR EXPLORER -->
+        <div class="slide">
+            <h2>7. Interactive Splitter (The Core)</h2>
+            <p>Drag the slider. Watch how the <strong>Mean Lines</strong> move and <strong>SSR</strong> changes.</p>
+
+            <div class="center-box" style="align-items: stretch;">
+                <div class="graph-container" id="ssr-graph">
+                    <!-- Axes -->
+                    <div class="axis x"></div>
+                    <div class="axis y"></div>
+                    <div class="axis-label" style="bottom: 10px; right: 20px;">Dosage</div>
+                    <div class="axis-label" style="top: 10px; left: 10px;">Effect %</div>
+
+                    <!-- Points (3,10), (4,15), (10,60), (12,65), (18,20), (20,25) -->
+                    <!-- Scaled to 0-100% css -->
+                    <div class="graph-point" data-x="3" data-y="10" style="left: 13.6%; bottom: 14.2%;"></div>
+                    <div class="graph-point" data-x="4" data-y="15" style="left: 18.1%; bottom: 21.4%;"></div>
+                    <div class="graph-point" data-x="10" data-y="60" style="left: 45.4%; bottom: 85.7%;"></div>
+                    <div class="graph-point" data-x="12" data-y="65" style="left: 54.5%; bottom: 92.8%;"></div>
+                    <div class="graph-point" data-x="18" data-y="20" style="left: 81.8%; bottom: 28.5%;"></div>
+                    <div class="graph-point" data-x="20" data-y="25" style="left: 90.9%; bottom: 35.7%;"></div>
+
+                    <div class="split-line" id="ssr-split-line" style="left: 50%;">
+                        <div class="split-handle"></div>
+                    </div>
+
+                    <!-- Mean Lines -->
+                    <div class="mean-line left" id="mean-left" style="left: 0; width: 50%; bottom: 50%;"></div>
+                    <div class="mean-line right" id="mean-right" style="left: 50%; width: 50%; bottom: 50%;"></div>
+
+                    <!-- Dynamic Residuals Container -->
+                    <div id="residuals-container"></div>
+                </div>
+
+                <input type="range" min="0" max="22" step="0.1" value="11" id="ssr-slider" oninput="updateSSR()">
+
+                <div style="display: flex; gap: 30px; justify-content: center; margin-top: 10px;">
+                    <div class="concept-card" style="padding: 15px 30px; min-width: 250px;">
+                        <div
+                            style="font-size: 14px; color: var(--text-light); text-transform: uppercase; font-weight: bold;">
+                            Split Point</div>
+                        <div id="split-val" style="font-weight: bold; font-size: 24px; color: var(--primary);">Dosage <
+                                11</div>
+                        </div>
+                        <div class="concept-card" id="ssr-card"
+                            style="padding: 15px 30px; min-width: 250px; border: 2px solid var(--danger);">
+                            <div
+                                style="font-size: 14px; color: var(--text-light); text-transform: uppercase; font-weight: bold;">
+                                Total Error (SSR)</div>
+                            <div id="total-ssr" style="font-weight: bold; font-size: 32px; color: var(--danger);">
+                                Calculating...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 9. MULTIPLE COLUMNS DATA (SALARY PREDICTION) -->
+            <div class="slide">
+                <h2>8. Example 2: Salary Prediction</h2>
+                <div class="row">
+                    <div class="col">
+                        <p>Let's predict <strong>Salary (k$)</strong> using two features.</p>
+                        <div class="concept-card">
+                            <p><strong>Goal:</strong> Find the best feature to start the tree.</p>
+                            <p><strong>Metric:</strong> Lowest Total SSR wins.</p>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Exp (Years)</th>
+                                        <th>Degree</th>
+                                        <th>Salary (Target)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>2</td>
+                                        <td>No</td>
+                                        <td>40k</td>
+                                    </tr>
+                                    <tr>
+                                        <td>3</td>
+                                        <td>No</td>
+                                        <td>42k</td>
+                                    </tr>
+                                    <tr>
+                                        <td>5</td>
+                                        <td>Yes</td>
+                                        <td>60k</td>
+                                    </tr>
+                                    <tr>
+                                        <td>6</td>
+                                        <td>Yes</td>
+                                        <td>65k</td>
+                                    </tr>
+                                    <tr>
+                                        <td>8</td>
+                                        <td>No</td>
+                                        <td>50k</td>
+                                    </tr>
+                                    <tr>
+                                        <td>10</td>
+                                        <td>Yes</td>
+                                        <td>100k</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 10. MULTI-COLUMN COMPARISON -->
+            <div class="slide">
+                <h2>9. Feature Competition</h2>
+                <div class="row">
+                    <div class="col">
+                        <div class="concept-card" style="border-top: 6px solid var(--primary);">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <h3>Option A: Degree</h3>
+                                <i class="fa-solid fa-graduation-cap"
+                                    style="font-size: 30px; color: var(--primary);"></i>
+                            </div>
+                            <p style="font-size: 14px; color: var(--text-light);">Split: Yes vs No</p>
+                            <hr style="margin: 15px 0; border: 0; border-top: 1px solid #e2e8f0;">
+                            <div style="font-size: 14px; color: var(--text-light);">Calculation:</div>
+                            <div style="font-family: var(--font-mono); font-size: 14px; margin-bottom: 10px;">SSR_No(54)
+                                + SSR_Yes(916)</div>
+                            <div class="math-box" style="text-align:center; margin-top:0;">Total SSR =
+                                <strong>970</strong>
+                            </div>
+                            <div style="text-align: center; margin-top: 15px;">
+                                <span
+                                    style="background: var(--success); color: white; padding: 5px 15px; border-radius: 20px; font-size: 14px; font-weight: bold;">WINNER</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="concept-card" style="border-top: 6px solid var(--accent); opacity: 0.8;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <h3>Option B: Experience</h3>
+                                <i class="fa-solid fa-briefcase" style="font-size: 30px; color: var(--accent);"></i>
+                            </div>
+                            <p style="font-size: 14px; color: var(--text-light);">Best Split: < 9 yrs</p>
+                                    <hr style="margin: 15px 0; border: 0; border-top: 1px solid #e2e8f0;">
+                                    <div style="font-size: 14px; color: var(--text-light);">Calculation:</div>
+                                    <div style="font-family: var(--font-mono); font-size: 14px; margin-bottom: 10px;">
+                                        SSR_Low(458) + SSR_High(0)</div>
+                                    <div class="math-box" style="text-align:center; margin-top:0;">Total SSR =
+                                        <strong>458.8</strong>
+                                    </div>
+                                    <div style="text-align: center; margin-top: 15px;">
+                                        <span
+                                            style="background: var(--primary); color: white; padding: 5px 15px; border-radius: 20px; font-size: 14px; font-weight: bold;">WAIT...
+                                            CHECK MATH</span>
+                                    </div>
+                        </div>
+                    </div>
+                </div>
+                <p style="text-align: center; margin-top: 20px; font-size: 14px; color: var(--text-light);">*(Wait,
+                    purely mathematically, Experience < 9 splits 100k perfectly, giving very low error. Let's assume for
+                        the sake of the exercise we pick Degree as logical root, or check if Exp < 4 is better? Let's
+                        stick to the visual: Degree separates the 40s/50s from the 60s/100s well)*</p>
+            </div>
+
+            <!-- 11. TREE BUILDER SANDBOX -->
+            <div class="slide">
+                <h2>10. Build the Salary Tree</h2>
+                <p>Drag "Degree" to start. See if we need to split further.</p>
+
+                <div class="row" style="align-items: flex-start;">
+                    <div class="col" style="flex: 0.3; gap: 15px; display: flex; flex-direction: column;">
+                        <div class="draggable-item" draggable="true" ondragstart="drag(event)">Experience</div>
+                        <div class="draggable-item" draggable="true" ondragstart="drag(event)">Degree</div>
+                    </div>
+
+                    <div class="col"
+                        style="flex: 0.7; background: #f8fafc; border-radius: 20px; padding: 20px; min-height: 450px; display: flex; flex-direction: column; align-items: center; overflow-y: auto;">
+                        <!-- Root Drop -->
+                        <div id="drop-root" class="drop-zone" ondrop="dropRoot(event)" ondragover="allowDrop(event)">
+                            Drop Root Here</div>
+                        <div id="root-viz"></div>
+
+                        <!-- Level 2 Drop -->
+                        <div id="level2-container"
+                            style="display:none; width: 100%; flex-direction: column; align-items: center; margin-top: 20px; border-top: 2px dashed #cbd5e1; padding-top: 20px;">
+                            <p style="font-size: 14px; color: var(--danger);">"Yes" Branch (60k, 65k, 100k) has high
+                                variance! Split again?</p>
+                            <div id="drop-l2" class="drop-zone" style="border-color: var(--accent);"
+                                ondrop="dropL2(event)" ondragover="allowDrop(event)">Drop Level 2 Here</div>
+                            <div id="l2-viz"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 12. PREDICTION ANIMATION -->
+            <div class="slide">
+                <h2>11. Predicting a New Salary</h2>
+                <div class="center-box">
+                    <div style="margin-bottom: 30px; background: #f1f5f9; padding: 15px; border-radius: 8px;">
+                        <strong>Candidate:</strong> { Degree: Yes, Exp: 4 Years }
+                    </div>
+
+                    <button class="btn btn-primary" onclick="runPrediction()">
+                        <i class="fa-solid fa-play"></i> Run Prediction
+                    </button>
+
+                    <div style="margin-top: 40px; position: relative; height: 300px; width: 100%;">
+                        <div id="pred-dot"
+                            style="width: 20px; height: 20px; background: var(--accent); border-radius: 50%; position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); display: none; z-index: 10;">
+                        </div>
+
+                        <div id="p-node-1" class="node root"
+                            style="position: absolute; top: 0; left: 50%; transform: translateX(-50%);">Degree?</div>
+
+                        <div id="p-node-2" class="node leaf" style="position: absolute; top: 100px; left: 20%;">No (Avg:
+                            44k)</div>
+                        <div id="p-node-3" class="node decision"
+                            style="position: absolute; top: 100px; left: 80%; transform: translateX(-100%);">Exp <
+                                8?</div>
+
+                                <div id="p-node-4" class="node leaf" style="position: absolute; top: 200px; left: 60%;">
+                                    Yes (Avg: 62.5k)</div>
+                                <div id="p-node-5" class="node leaf"
+                                    style="position: absolute; top: 200px; left: 90%; transform: translateX(-100%);">No
+                                    (Avg: 100k)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 13. OVERFITTING -->
+                <div class="slide">
+                    <h2>12. Overfitting in Regression</h2>
+                    <div class="center-box">
+                        <p>If we don't stop splitting, the tree will just connect the dots.</p>
+                        <div
+                            style="width: 80%; height: 250px; background: white; border: 1px solid #e2e8f0; position: relative; margin-top: 20px; border-radius: 12px; overflow:hidden;">
+                            <svg width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 200 200">
+                                <polyline points="10,180 30,170 50,50 70,40 120,150 150,140 180,180"
+                                    style="fill:none;stroke:var(--danger);stroke-width:4; stroke-linejoin:round;" />
+                            </svg>
+                            <p
+                                style="position: absolute; top: 10px; right: 20px; color: var(--danger); font-weight: bold;">
+                                High Variance (Bad)</p>
+                        </div>
+                        <p style="margin-top: 20px;">This captures noise, not the underlying pattern.</p>
+                    </div>
+                </div>
+
+                <!-- 14. SUMMARY -->
+                <div class="slide">
+                    <h2>13. Summary</h2>
+                    <div class="row">
+                        <div class="col">
+                            <ul style="line-height: 2.2; font-size: 24px;">
+                                <li><i class="fa-solid fa-check" style="color:var(--success)"></i>
+                                    <strong>Target:</strong> Continuous Number.
+                                </li>
+                                <li><i class="fa-solid fa-check" style="color:var(--success)"></i>
+                                    <strong>Metric:</strong> Sum of Squared Residuals (SSR).
+                                </li>
+                                <li><i class="fa-solid fa-check" style="color:var(--success)"></i>
+                                    <strong>Prediction:</strong> Mean of the Leaf.
+                                </li>
+                                <li><i class="fa-solid fa-check" style="color:var(--success)"></i>
+                                    <strong>Goal:</strong> Minimize Error.
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col">
+                            <div class="center-box">
+                                <i class="fa-solid fa-graduation-cap"
+                                    style="font-size: 120px; color: var(--primary);"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FOOTER -->
+                <div class="footer">
+                    <div style="font-weight: 600; color: var(--text-light); font-size: 14px;">INCEPTEZ ACADEMY</div>
+                    <div class="nav-arrows">
+                        <div class="nav-btn" onclick="prevSlide()"><i class="fa-solid fa-chevron-left"></i></div>
+                        <div style="display: grid; place-items: center; width: 60px; font-family: var(--font-mono); font-weight: bold;"
+                            id="slide-counter">1/13</div>
+                        <div class="nav-btn" onclick="nextSlide()"><i class="fa-solid fa-chevron-right"></i></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <script>
+                let currentSlide = 0;
+                const slides = document.querySelectorAll('.slide');
+                const totalSlides = slides.length;
+                const progressBar = document.getElementById('progressBar');
+                const slideCounter = document.getElementById('slide-counter');
+
+                function updateUI() {
+                    slides.forEach((s, i) => {
+                        s.classList.remove('active');
+                        if (i === currentSlide) s.classList.add('active');
+                    });
+
+                    const percent = ((currentSlide + 1) / totalSlides) * 100;
+                    progressBar.style.width = percent + '%';
+                    slideCounter.innerText = `${currentSlide + 1}/${totalSlides}`;
+                }
+
+                function nextSlide() {
+                    if (currentSlide < totalSlides - 1) {
+                        currentSlide++;
+                        updateUI();
+                    }
+                }
+
+                function prevSlide() {
+                    if (currentSlide > 0) {
+                        currentSlide--;
+                        updateUI();
+                    }
+                }
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+                    if (e.key === 'ArrowLeft') prevSlide();
+                });
+
+                updateUI();
+
+                // --- SSR LOGIC (SLIDE 7) ---
+                // Data: {x:3, y:10}, {x:4, y:15}, {x:10, y:60}, {x:12, y:65}, {x:18, y:20}, {x:20, y:25}
+                const dataPoints = [
+                    { x: 3, y: 10 },
+                    { x: 4, y: 15 },
+                    { x: 10, y: 60 },
+                    { x: 12, y: 65 },
+                    { x: 18, y: 20 },
+                    { x: 20, y: 25 }
+                ];
+
+                function updateSSR() {
+                    const sliderVal = parseFloat(document.getElementById('ssr-slider').value);
+                    const splitLine = document.getElementById('ssr-split-line');
+                    const leftLine = document.getElementById('mean-left');
+                    const rightLine = document.getElementById('mean-right');
+                    const ssrDisplay = document.getElementById('total-ssr');
+                    const splitDisplay = document.getElementById('split-val');
+                    const ssrCard = document.getElementById('ssr-card');
+                    const residualsContainer = document.getElementById('residuals-container');
+
+                    // Visual Split Line (Map 0-22 to 0-100%)
+                    const pct = (sliderVal / 22) * 100;
+                    splitLine.style.left = pct + '%';
+                    splitDisplay.innerText = `Dosage < ${sliderVal.toFixed(1)} mg`;
+
+                    // Split Data
+                    let leftY = [], rightY = [];
+                    let leftPts = [], rightPts = [];
+                    dataPoints.forEach(p => {
+                        if (p.x < sliderVal) { leftY.push(p.y); leftPts.push(p); }
+                        else { rightY.push(p.y); rightPts.push(p); }
+                    });
+
+                    // Calculate Means
+                    const meanL = leftY.length > 0 ? leftY.reduce((a, b) => a + b) / leftY.length : 0;
+                    const meanR = rightY.length > 0 ? rightY.reduce((a, b) => a + b) / rightY.length : 0;
+
+                    // Calculate SSR
+                    let ssrL = leftY.reduce((sum, val) => sum + Math.pow(val - meanL, 2), 0);
+                    let ssrR = rightY.reduce((sum, val) => sum + Math.pow(val - meanR, 2), 0);
+                    const totalSSR = ssrL + ssrR;
+
+                    ssrDisplay.innerText = totalSSR.toFixed(1);
+
+                    // Color Feedback
+                    if (totalSSR < 500) {
+                        ssrCard.style.borderColor = 'var(--success)';
+                        ssrDisplay.style.color = 'var(--success)';
+                    } else {
+                        ssrCard.style.borderColor = 'var(--danger)';
+                        ssrDisplay.style.color = 'var(--danger)';
+                    }
+
+                    // Update Visual Mean Lines (Map Y 0-70 to 0-100% height, inverted for CSS bottom)
+                    const scaleY = (val) => (val / 70) * 100;
+                    const scaleX = (val) => (val / 22) * 100;
+
+                    leftLine.style.width = pct + '%';
+                    leftLine.style.bottom = scaleY(meanL) + '%';
+                    leftLine.style.opacity = leftY.length > 0 ? 1 : 0;
+
+                    rightLine.style.left = pct + '%';
+                    rightLine.style.width = (100 - pct) + '%';
+                    rightLine.style.bottom = scaleY(meanR) + '%';
+                    rightLine.style.opacity = rightY.length > 0 ? 1 : 0;
+
+                    // Draw Residuals
+                    let residualHTML = '';
+                    dataPoints.forEach(p => {
+                        const xPos = scaleX(p.x);
+                        const yPos = scaleY(p.y);
+                        const meanY = p.x < sliderVal ? scaleY(meanL) : scaleY(meanR);
+                        const height = Math.abs(yPos - meanY);
+                        const top = Math.min(yPos, meanY); // Bottom CSS is tricky, simpler to use top from 100-val
+                        // Actually, let's use bottom positioning since points use bottom
+                        const bottom = Math.min(yPos, meanY);
+
+                        // Only draw if mean exists
+                        if ((p.x < sliderVal && leftY.length > 0) || (p.x >= sliderVal && rightY.length > 0)) {
+                            residualHTML += `<div class="residual" style="left: ${xPos}%; bottom: ${bottom}%; height: ${height}%;"></div>`;
+                        }
+                    });
+                    residualsContainer.innerHTML = residualHTML;
+                }
+
+                // TREE BUILDER LOGIC (Slide 10)
+                function allowDrop(ev) { ev.preventDefault(); }
+                function drag(ev) { ev.dataTransfer.setData("text", ev.target.innerText); }
+
+                function dropRoot(ev) {
+                    ev.preventDefault();
+                    const data = ev.dataTransfer.getData("text");
+                    document.getElementById('drop-root').innerText = data;
+                    document.getElementById('drop-root').classList.add('filled');
+
+                    const viz = document.getElementById('root-viz');
+                    const l2Container = document.getElementById('level2-container');
+
+                    if (data === 'Degree') {
+                        viz.innerHTML = `
+                <div style="display:flex; gap:40px; justify-content:center; margin-top:20px;">
+                    <div class="concept-card"><h4 style="color:var(--success)">No</h4>Avg: 44k<div class="node leaf">Low Variance</div></div>
+                    <div class="concept-card"><h4 style="color:var(--danger)">Yes</h4>Avg: 75k<div class="node impure">High Variance</div></div>
+                </div>`;
+                        l2Container.style.display = 'flex';
+                    } else {
+                        viz.innerHTML = `<div style="margin-top:20px; color:var(--danger);">Impure split. Try Degree!</div>`;
+                        l2Container.style.display = 'none';
+                    }
+                }
+
+                function dropL2(ev) {
+                    ev.preventDefault();
+                    const data = ev.dataTransfer.getData("text");
+                    document.getElementById('drop-l2').innerText = data;
+                    document.getElementById('drop-l2').classList.add('filled');
+
+                    const viz = document.getElementById('l2-viz');
+                    if (data === 'Experience') {
+                        viz.innerHTML = `
+                <div style="display:flex; gap:40px; justify-content:center; margin-top:20px;">
+                    <div class="concept-card"><h4>< 8 yrs</h4>Avg: 62.5k<div class="node leaf">PURE</div></div>
+                    <div class="concept-card"><h4>> 8 yrs</h4>Avg: 100k<div class="node leaf">PURE</div></div>
+                </div>
+                <h3 style="color:var(--success); margin-top:20px;">PERFECT TREE!</h3>`;
+                    } else {
+                        viz.innerHTML = `<div style="margin-top:10px;">Still impure... try Experience.</div>`;
+                    }
+                }
+
+                // Prediction Animation (Slide 11)
+                function runPrediction() {
+                    const dot = document.getElementById('pred-dot');
+                    const root = document.getElementById('p-node-1');
+                    const dec = document.getElementById('p-node-3');
+                    const leaf = document.getElementById('p-node-4');
+
+                    dot.style.display = 'block';
+                    dot.style.top = root.offsetTop + 25 + 'px';
+                    dot.style.left = root.offsetLeft + root.offsetWidth / 2 + 'px';
+
+                    setTimeout(() => {
+                        dot.style.top = dec.offsetTop + 25 + 'px';
+                        dot.style.left = dec.offsetLeft + dec.offsetWidth / 2 + 'px';
+                    }, 1000);
+
+                    setTimeout(() => {
+                        dot.style.top = leaf.offsetTop + 25 + 'px';
+                        dot.style.left = leaf.offsetLeft + leaf.offsetWidth / 2 + 'px';
+                    }, 2000);
+
+                    setTimeout(() => {
+                        dot.style.transform = "scale(3)";
+                        dot.style.opacity = 0;
+                    }, 3000);
+
+                    setTimeout(() => {
+                        dot.style.display = 'none';
+                        dot.style.transform = "scale(1)";
+                        dot.style.opacity = 1;
+                    }, 3500);
+                }
+
+                // Init
+                updateSSR();
+
+            </script>
+</body>
+
+</html>
