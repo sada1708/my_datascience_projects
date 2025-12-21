@@ -1,0 +1,98 @@
+Numerical (Continuous/Discrete): LotArea, OverallQual, TotalBsmtSF, GrLivArea, GarageArea, SalePrice (target variable), YearBuilt, etc. Some integer columns like OverallQual are actually treated as ordinal categorical features in practice.
+Ordinal Categorical: The data description is key here. Many features are described with quality ratings:
+ExterQual, ExterCond (Exterior quality/condition)
+BsmtQual, BsmtCond, BsmtExposure, BsmtFinType1, BsmtFinType2 (Basement features)
+HeatingQC (Heating quality and condition)
+KitchenQual (Kitchen quality)
+FireplaceQu (Fireplace quality)
+GarageQual, GarageCond (Garage quality/condition)
+PoolQC (Pool quality)
+Nominal Categorical: MSZoning, Street, LotShape, LandContour, Neighborhood, BldgType, HouseStyle, RoofStyle, Foundation, etc.. These have no inherent order. 
+The most efficient way to classify is to use the df.dtypes method in pandas to initially separate object (potential categorical) and numeric types, then use the provided Kaggle data dictionary to manually sort the object columns into nominal and ordinal categories. 
+
+Categorical :
+
+['MSZoning',
+ 'Street',
+ 'Alley',
+ 'LotShape',
+ 'LandContour',
+ 'Utilities',
+ 'LotConfig',
+ 'LandSlope',
+ 'Neighborhood',
+ 'Condition1',
+ 'Condition2',
+ 'BldgType',
+ 'HouseStyle',
+ 'RoofStyle',
+ 'RoofMatl',
+ 'Exterior1st',
+ 'Exterior2nd',
+ 'MasVnrType',
+ 'ExterQual',
+ 'ExterCond',
+ 'Foundation',
+ 'BsmtQual',
+ 'BsmtCond',
+ 'BsmtExposure',
+ 'BsmtFinType1',
+ 'BsmtFinType2',
+ 'Heating',
+ 'HeatingQC',
+ 'CentralAir',
+ 'Electrical',
+ 'KitchenQual',
+ 'Functional',
+ 'FireplaceQu',
+ 'GarageType',
+ 'GarageFinish',
+ 'GarageQual',
+ 'GarageCond',
+ 'PavedDrive',
+ 'PoolQC',
+ 'Fence',
+ 'MiscFeature',
+ 'SaleType',
+ 'SaleCondition']
+
+ Numeric:
+
+ ['Id',
+ 'MSSubClass', 
+ 'LotFrontage',
+ 'LotArea',
+ 'OverallQual',
+ 'OverallCond',
+ 'YearBuilt',
+ 'YearRemodAdd',
+ 'MasVnrArea',
+ 'BsmtFinSF1',
+ 'BsmtFinSF2',
+ 'BsmtUnfSF',
+ 'TotalBsmtSF',
+ '1stFlrSF',
+ '2ndFlrSF',
+ 'LowQualFinSF',
+ 'GrLivArea',
+ 'BsmtFullBath',
+ 'BsmtHalfBath',
+ 'FullBath',
+ 'HalfBath',
+ 'BedroomAbvGr',
+ 'KitchenAbvGr',
+ 'TotRmsAbvGrd',
+ 'Fireplaces',
+ 'GarageYrBlt',
+ 'GarageCars',
+ 'GarageArea',
+ 'WoodDeckSF',
+ 'OpenPorchSF',
+ 'EnclosedPorch',
+ '3SsnPorch',
+ 'ScreenPorch',
+ 'PoolArea',
+ 'MiscVal',
+ 'MoSold',
+ 'YrSold',
+ 'SalePrice']

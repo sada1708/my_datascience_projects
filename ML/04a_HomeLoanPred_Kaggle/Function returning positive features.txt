@@ -1,0 +1,18 @@
+Function returning positive features
+
+def get_pos_corr_num_headers(data, target_col):
+    num_features = data.select_dtypes(include = np.number)
+    #correlations = num_features.corr()[target_col].drop(target_col, errors ='ignore')
+    correlations = num_features.corr()[target_col]
+    positive_features = correlations[correlations > 0.0005].index.tolist()
+    return positive_features    
+
+def get_pos_corr_cat_headers(data, target_col):
+    cat_features = data.select_dtypes(include = ['object'])
+    # one Hot Encoding using pd.get_dummies
+    en_cat_features = pd.get_dummies(cat_features)
+    en_cat_features = pd.concat([en_cat_features, data[target_col]], axis = 1)
+    #correlations = en_cat_features.corr()[target_col].drop(target_col, errors = 'ignore')
+    correlations = en_cat_features.corr()[target_col].drop(target_col, errors = 'ignore')
+    positive_features = correlations[correlations >0].index.tolist()
+    return positive_features
