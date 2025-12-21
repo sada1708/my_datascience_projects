@@ -8,6 +8,8 @@ WORKDIR /app
 COPY requirements.txt .
 COPY jobchg_pipeline_model.pkl . 
 COPY app.py .
+COPY train.csv .
+
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
