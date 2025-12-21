@@ -1,7 +1,7 @@
 steps:
   # 1. Build the Streamlit application Docker image
   - name: 'gcr.io/cloud-builders/docker'
-    dir: 'ML/10_OverSampling_AV_HR_Analytics' # <--- Sets the working directory (WD)
+    dir: 'ML/10A_FAST_API_AV_HR_Analytics' # <--- Sets the working directory (WD)
     args:
       - 'build'
       - '-t'
