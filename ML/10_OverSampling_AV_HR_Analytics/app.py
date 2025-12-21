@@ -6,16 +6,13 @@ import joblib
 
 st.title("HR job Look Prediction")
 
-from pathlib import Path
-import pandas as pd
+#from pathlib import Path
+### This gets the absolute path of the directory where app.py lives
+###current_dir = Path(__file__).parent
+###file_path = current_dir / "train.csv"
+###df = pd.read_csv(file_path)
 
-# This gets the absolute path of the directory where app.py lives
-current_dir = Path(__file__).parent
-file_path = current_dir / "train.csv"
-
-df = pd.read_csv(file_path)
-
-#df = pd.read_csv('train.csv')
+df = pd.read_csv('train.csv')
 
 #input fields
 
