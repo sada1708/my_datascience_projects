@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copy the requirements.txt, model and application code
 COPY requirements.txt .
-COPY bjobchg_pipeline_model.pkl . 
+COPY jobchg_pipeline_model.pkl . 
 COPY app.py .
 
 # Install dependencies
