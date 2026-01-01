@@ -6,8 +6,10 @@ WORKDIR /app
 
 # Copy the requirements.txt, model and application code
 COPY requirements.txt .
-COPY jobchg_pipeline_model.pkl . 
+COPY house_price_model.pkl . 
+COPY model_defaults.joblib .
 COPY app.py .
+COPY model_dataPrep.py .
 COPY train.csv .
 
 
