@@ -56,7 +56,7 @@ if st.button('Predict'):
     input_df = pd.DataFrame([input_data])
     input_df = data_prep(input_df)
 
-    price = np.expm1x(model.predict(input_df)[0])
+    price = np.expm1(model.predict(input_df)[0])
 
     st.metric('Estimated Value', f'${price:,.2f}')
     st.balloons()
