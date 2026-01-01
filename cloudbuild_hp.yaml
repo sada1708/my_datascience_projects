@@ -12,7 +12,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'us-central1-docker.pkg.dev/streamlitapp-houseprice/streamlit-hp-repo/streamlit-app:latest'
+      - 'us-central1-docker.pkg.dev/streamlitapp-houseprice/streamlit-hp-repo/streamlit-hp:latest'
 images:
   - 'us-central1-docker.pkg.dev/streamlitapp-houseprice/streamlit-hp-repo/streamlit-hp:latest'
 options:
