@@ -1,19 +1,19 @@
 steps:
   # 1. Build the Streamlit application Docker image
   - name: 'gcr.io/cloud-builders/docker'
-    dir: 'ML/04_StreamlitGCPDeployment' # <--- Sets the working directory (WD)
+    dir: 'ML/11_AV_Hackathon_03JAN2026/hr_promo_fastapi' # <--- Sets the working directory (WD)
     args:
       - 'build'
       - '-t'
-      - 'us-central1-docker.pkg.dev/streamlitapp-bigmart/streamlit-app-repo/streamlit-app:latest'
+      - 'us-central1-docker.pkg.dev/fastapi-hrpromo/fastapi-hrpromo-repo/astapi-hrpromo:latest'
       #- '--file' # <--- Flag to specify the Dockerfile location
       #- 'ML/04_StreamlitGCPDeployment/Dockerfile' # <--- Full path to the Dockerfile
       - '.' # <--- Build Context: Use the repository root (/workspace)
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'us-central1-docker.pkg.dev/streamlitapp-bigmart/streamlit-app-repo/streamlit-app:latest'
+      - 'us-central1-docker.pkg.dev/fastapi-hrpromo/fastapi-hrpromo-repo/astapi-hrpromo:latest'
 images:
-  - 'us-central1-docker.pkg.dev/streamlitapp-bigmart/streamlit-app-repo/streamlit-app:latest'
+  - 'us-central1-docker.pkg.dev/fastapi-hrpromo/fastapi-hrpromo-repo/astapi-hrpromo:latest'
 options:
   logging: CLOUD_LOGGING_ONLY
