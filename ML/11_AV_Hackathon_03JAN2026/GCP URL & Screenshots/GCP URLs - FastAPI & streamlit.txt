@@ -1,0 +1,3 @@
+Fast API : https://fastapi-hrpromo-586617854832.us-central1.run.app
+
+Streamlit : https://streamlit-predictpromo-447317863266.us-central1.run.app
