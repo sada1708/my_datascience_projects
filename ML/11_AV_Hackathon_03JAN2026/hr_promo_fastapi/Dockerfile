@@ -22,4 +22,4 @@ ENV PORT 8080
 EXPOSE $PORT
 
 # Command to run your Streamlit application
-CMD ["uvicorn", "run", "main.py", "--server.port", "8080", "--server.address", "0.0.0.0"]
+CMD uvicorn main:app --host 0.0.0.0 --port $PORT
