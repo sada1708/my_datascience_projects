@@ -1,7 +1,7 @@
 steps:
   # 1. Build the Streamlit application Docker image
   - name: 'gcr.io/cloud-builders/docker'
-    dir: 'ML/11_AV_Hackathon_03JAN2026/hr_promo_streamlit' # <--- Sets the working directory (WD)
+    dir: 'ML/11_AV_Hackathon_03JAN2026/hr_promo_streamlit/' # <--- Sets the working directory (WD)
     args:
       - 'build'
       - '-t'
